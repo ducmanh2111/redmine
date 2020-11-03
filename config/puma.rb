@@ -24,7 +24,7 @@ elsif rails_env == 'production'
   bind  "unix://#{shared_dir}/tmp/sockets/puma.sock"
   pidfile "#{shared_dir}/tmp/pids/puma.pid"
   state_path "#{shared_dir}/tmp/sockets/puma.state"
-  directory "/var/www/app_name/current"
+  directory "/var/www/redmine"
   stdout_redirect '#{shared_dir}/log/puma.log', '#{shared_dir}/log/puma.log', true
 
   workers 2
