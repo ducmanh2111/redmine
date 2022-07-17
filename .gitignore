@@ -15,7 +15,6 @@
 /db/*.db
 /db/*.sqlite3
 /db/*.sqlite3-*
-/db/schema.rb
 /files/*
 /lib/redmine/scm/adapters/mercurial/redminehelper.pyc
 /lib/redmine/scm/adapters/mercurial/redminehelper.pyo
@@ -40,8 +39,14 @@
 *.rbc
 
 /.bundle
-/Gemfile.lock
 /Gemfile.local
 
 /node_modules
 yarn-error.log
+
+/config/credentials/production.key
+
+/config/credentials/staging.key
+
+/config/credentials/development.key
+/.ssh

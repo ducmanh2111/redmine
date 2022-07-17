@@ -1,9 +1,11 @@
 source 'https://rubygems.org'
 
-ruby '>= 2.6.0', '< 3.2.0'
+# ruby '>= 2.6.0', '< 3.2.0'
+ruby "2.6.6"
 gem 'bundler', '>= 1.12.0'
 
 gem 'rails', '6.1.6'
+gem 'puma', '< 5'
 gem 'rouge', '~> 3.29.0'
 gem 'request_store', '~> 1.5.0'
 gem 'mini_mime', '~> 1.1.0'
@@ -21,6 +23,14 @@ gem 'rubyzip', '~> 2.3.0'
 gem 'net-smtp', '~> 0.3.0'
 gem 'net-imap', '~> 0.2.2'
 gem 'net-pop', '~> 0.1.1'
+gem "capistrano", "~> 3.10", require: false
+gem "capistrano-rails", "~> 1.3", require: false
+gem "capistrano-rvm"
+gem "capistrano-bundler", require: false
+gem "capistrano3-puma"
+gem 'net-ssh', '>= 6.0.2'
+gem 'ed25519', '>= 1.2', '< 2.0'
+gem 'bcrypt_pbkdf', '>= 1.0', '< 2.0'
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :x64_mingw, :mswin]
@@ -95,7 +105,6 @@ group :test do
   gem 'simplecov', '~> 0.21.2', :require => false
   gem "ffi", platforms: [:mingw, :x64_mingw, :mswin]
   # For running system tests
-  gem 'puma'
   gem 'capybara', '~> 3.36.0'
   gem "selenium-webdriver", "~> 3.142.7"
   gem 'webdrivers', '4.6.1', require: false
