@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@ require File.expand_path('../../test_helper', __FILE__)
 
 class AttachmentsControllerTest < Redmine::ControllerTest
   fixtures :users, :user_preferences, :projects, :roles, :members, :member_roles,
-           :enabled_modules, :issues, :trackers, :attachments,
+           :enabled_modules, :issues, :trackers, :attachments, :issue_statuses, :journals, :journal_details,
            :versions, :wiki_pages, :wikis, :documents, :enumerations
 
   def setup
@@ -157,7 +157,7 @@ class AttachmentsControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_equal 'text/html', @response.media_type
     assert_select 'tr#L1' do
-      assert_select 'th.line-num', :text => '1'
+      assert_select 'th.line-num a[data-txt=?]', '1'
       assert_select 'td', :text => /日本語/
     end
   end
@@ -174,7 +174,7 @@ class AttachmentsControllerTest < Redmine::ControllerTest
       assert_response :success
       assert_equal 'text/html', @response.media_type
       assert_select 'tr#L7' do
-        assert_select 'th.line-num', :text => '7'
+        assert_select 'th.line-num a[data-txt=?]', '7'
         assert_select 'td', :text => /Demande cr\?\?e avec succ\?s/
       end
     end
@@ -192,7 +192,7 @@ class AttachmentsControllerTest < Redmine::ControllerTest
       assert_response :success
       assert_equal 'text/html', @response.media_type
       assert_select 'tr#L7' do
-        assert_select 'th.line-num', :text => '7'
+        assert_select 'th.line-num a[data-txt=?]', '7'
         assert_select 'td', :text => /Demande créée avec succès/
       end
     end
@@ -209,7 +209,7 @@ class AttachmentsControllerTest < Redmine::ControllerTest
     end
   end
 
-  def test_show_text_file_formated_markdown
+  def test_show_text_file_formatted_markdown
     set_tmp_attachments_directory
     a = Attachment.new(:container => Issue.find(1),
                        :file => uploaded_test_file('testfile.md', 'text/plain'),
@@ -222,7 +222,7 @@ class AttachmentsControllerTest < Redmine::ControllerTest
     assert_select 'div.wiki', :html => "<h1>Header 1</h1>\n\n<h2>Header 2</h2>\n\n<h3>Header 3</h3>"
   end
 
-  def test_show_text_file_fromated_textile
+  def test_show_text_file_formatted_textile
     set_tmp_attachments_directory
     a = Attachment.new(:container => Issue.find(1),
                        :file => uploaded_test_file('testfile.textile', 'text/plain'),
@@ -524,6 +524,23 @@ class AttachmentsControllerTest < Redmine::ControllerTest
     assert_response 403
   end
 
+  def test_edit_all_issue_attachment_by_user_without_edit_issue_permission_on_tracker_should_return_404
+    role = Role.find(2)
+    role.set_permission_trackers 'edit_issues', [2, 3]
+    role.save!
+
+    @request.session[:user_id] = 2
+
+    get(
+      :edit_all,
+      :params => {
+        :object_type => 'issues',
+        :object_id => '4'
+      }
+    )
+    assert_response 404
+  end
+
   def test_update_all
     @request.session[:user_id] = 2
     patch(
@@ -726,5 +743,26 @@ class AttachmentsControllerTest < Redmine::ControllerTest
     end
     assert_response 302
     assert Attachment.find_by_id(3)
+  end
+
+  def test_destroy_issue_attachment_by_user_without_edit_issue_permission_on_tracker
+    role = Role.find(2)
+    role.set_permission_trackers 'edit_issues', [2, 3]
+    role.save!
+
+    @request.session[:user_id] = 2
+
+    set_tmp_attachments_directory
+    assert_no_difference 'Attachment.count' do
+      delete(
+        :destroy,
+        :params => {
+          :id => 7
+        }
+      )
+    end
+
+    assert_response 403
+    assert Attachment.find_by_id(7)
   end
 end

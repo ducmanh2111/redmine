@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
-require 'active_record'
-
 module ActiveRecord
   class Base
-    include Redmine::I18n
     # Translate attribute names for validation errors display
     def self.human_attribute_name(attr, options = {})
       prepared_attr = attr.to_s.sub(/_id$/, '').sub(/^.+\./, '')
@@ -53,12 +50,14 @@ module ActionView
 
   class Resolver
     def find_all(name, prefix=nil, partial=false, details={}, key=nil, locals=[])
+      locals = locals.map(&:to_s).sort!.freeze
+
       cached(key, [name, prefix, partial], details, locals) do
         if (details[:formats] & [:xml, :json]).any?
           details = details.dup
           details[:formats] = details[:formats].dup + [:api]
         end
-        find_templates(name, prefix, partial, details)
+        _find_all(name, prefix, partial, details, key, locals)
       end
     end
   end
@@ -115,30 +114,12 @@ module DeliveryMethods
       dest_dir = File.join(Rails.root, 'tmp', 'emails')
       Dir.mkdir(dest_dir) unless File.directory?(dest_dir)
       filename = "#{Time.now.to_i}_#{mail.message_id.gsub(/[<>]/, '')}.eml"
-      File.open(File.join(dest_dir, filename), 'wb') {|f| f.write(mail.encoded) }
+      File.binwrite(File.join(dest_dir, filename), mail.encoded)
     end
   end
 end
 
 ActionMailer::Base.add_delivery_method :tmp_file, DeliveryMethods::TmpFile
-
-# Changes how sent emails are logged
-# Rails doesn't log cc and bcc which is misleading when using bcc only (#12090)
-module ActionMailer
-  class LogSubscriber < ActiveSupport::LogSubscriber
-    def deliver(event)
-      recipients = [:to, :cc, :bcc].inject(+"") do |s, header|
-        r = Array.wrap(event.payload[header])
-        if r.any?
-          s << "\n  #{header}: #{r.join(', ')}"
-        end
-        s
-      end
-      info("\nSent email \"#{event.payload[:subject]}\" (%1.fms)#{recipients}" % event.duration)
-      debug(event.payload[:mail])
-    end
-  end
-end
 
 module ActionController
   module MimeResponds
@@ -209,6 +190,20 @@ module ActionView
             asset_id
           end
         end
+      end
+    end
+  end
+end
+
+# https://github.com/rack/rack/pull/1703
+# TODO: remove this when Rack is updated to 3.0.0
+require 'rack'
+module Rack
+  class RewindableInput
+    unless method_defined?(:size)
+      def size
+        make_rewindable unless @rewindable_io
+        @rewindable_io.size
       end
     end
   end

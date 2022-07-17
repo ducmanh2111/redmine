@@ -2,7 +2,7 @@
 
 #
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -224,9 +224,12 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
 
   def test_abbreviations
     assert_html_output(
-      'this is an abbreviation: GPL(General Public License)' => 'this is an abbreviation: <abbr title="General Public License">GPL</abbr>',
-      '2 letters JP(Jean-Philippe) abbreviation' => '2 letters <abbr title="Jean-Philippe">JP</abbr> abbreviation',
-      'GPL(This is a double-quoted "title")' => '<abbr title="This is a double-quoted &quot;title&quot;">GPL</abbr>'
+      'this is an abbreviation: GPL(General Public License)' =>
+        'this is an abbreviation: <abbr title="General Public License">GPL</abbr>',
+      '2 letters JP(Jean-Philippe) abbreviation' =>
+        '2 letters <abbr title="Jean-Philippe">JP</abbr> abbreviation',
+      'GPL(This is a double-quoted "title")' =>
+        '<abbr title="This is a double-quoted &quot;title&quot;">GPL</abbr>'
     )
   end
 
@@ -401,8 +404,12 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
 
   def test_textile_should_escape_image_urls
     # this is onclick="alert('XSS');" in encoded form
-    raw = '!/images/comment.png"onclick=&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x27;&#x58;&#x53;&#x53;&#x27;&#x29;;&#x22;!'
-    expected = '<p><img src="/images/comment.png&quot;onclick=&amp;#x61;&amp;#x6c;&amp;#x65;&amp;#x72;&amp;#x74;&amp;#x28;&amp;#x27;&amp;#x58;&amp;#x53;&amp;#x53;&amp;#x27;&amp;#x29;;&amp;#x22;" alt="" /></p>'
+    raw =
+      '!/images/comment.png"onclick=&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x27;&#x58;&#x53;&#x53;&#x27;&#x29;;&#x22;!'
+    expected =
+      '<p><img src="/images/comment.png&quot;onclick=' \
+        '&amp;#x61;&amp;#x6c;&amp;#x65;&amp;#x72;&amp;#x74;&amp;#x28;' \
+        '&amp;#x27;&amp;#x58;&amp;#x53;&amp;#x53;&amp;#x27;&amp;#x29;;&amp;#x22;" alt="" /></p>'
     assert_equal expected.gsub(%r{\s+}, ''), to_html(raw).gsub(%r{\s+}, '')
   end
 
@@ -459,11 +466,22 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
   def test_update_section_should_update_the_requested_section
     replacement = "New text"
 
-    assert_equal [STR_WITHOUT_PRE[0], replacement, STR_WITHOUT_PRE[2..4]].flatten.join("\n\n"), @formatter.new(TEXT_WITHOUT_PRE).update_section(2, replacement)
-    assert_equal [STR_WITHOUT_PRE[0..1], replacement, STR_WITHOUT_PRE[4]].flatten.join("\n\n"), @formatter.new(TEXT_WITHOUT_PRE).update_section(3, replacement)
-    assert_equal [STR_WITHOUT_PRE[0..2], replacement, STR_WITHOUT_PRE[4]].flatten.join("\n\n"), @formatter.new(TEXT_WITHOUT_PRE).update_section(5, replacement)
-    assert_equal [STR_WITHOUT_PRE[0..3], replacement].flatten.join("\n\n"), @formatter.new(TEXT_WITHOUT_PRE).update_section(6, replacement)
-
+    assert_equal(
+      [STR_WITHOUT_PRE[0], replacement, STR_WITHOUT_PRE[2..4]].flatten.join("\n\n"),
+      @formatter.new(TEXT_WITHOUT_PRE).update_section(2, replacement)
+    )
+    assert_equal(
+      [STR_WITHOUT_PRE[0..1], replacement, STR_WITHOUT_PRE[4]].flatten.join("\n\n"),
+      @formatter.new(TEXT_WITHOUT_PRE).update_section(3, replacement)
+    )
+    assert_equal(
+      [STR_WITHOUT_PRE[0..2], replacement, STR_WITHOUT_PRE[4]].flatten.join("\n\n"),
+      @formatter.new(TEXT_WITHOUT_PRE).update_section(5, replacement)
+    )
+    assert_equal(
+      [STR_WITHOUT_PRE[0..3], replacement].flatten.join("\n\n"),
+      @formatter.new(TEXT_WITHOUT_PRE).update_section(6, replacement)
+    )
     assert_equal TEXT_WITHOUT_PRE, @formatter.new(TEXT_WITHOUT_PRE).update_section(0, replacement)
     assert_equal TEXT_WITHOUT_PRE, @formatter.new(TEXT_WITHOUT_PRE).update_section(10, replacement)
   end
@@ -578,12 +596,16 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
   end
 
   def test_should_not_allow_arbitrary_class_attribute_on_offtags
-    %w(code pre kbd).each do |tag|
-      assert_html_output({"<#{tag} class=\"foo\">test</#{tag}>" => "<#{tag}>test</#{tag}>"}, false)
-      assert_html_output({"<#{tag} class='foo'>test</#{tag}>" => "<#{tag}>test</#{tag}>"}, false)
-      assert_html_output({"<#{tag} class=\"ruby foo\">test</#{tag}>" => "<#{tag}>test</#{tag}>"}, false)
-      assert_html_output({"<#{tag} class='ruby foo'>test</#{tag}>" => "<#{tag}>test</#{tag}>"}, false)
-      assert_html_output({"<#{tag} class=\"ruby \"foo\" bar\">test</#{tag}>" => "<#{tag}>test</#{tag}>"}, false)
+    {
+      "class=\"foo\"" => "data-language=\"foo\"",
+      "class='foo'" => "data-language=\"foo\"",
+      "class=\"ruby foo\"" => "data-language=\"ruby foo\"",
+      "class='ruby foo'" => "data-language=\"ruby foo\"",
+      "class=\"ruby \"foo\" bar\"" => "data-language=\"ruby \"",
+    }.each do |classattr, codeattr|
+      assert_html_output({"<code #{classattr}>test</code>" => "<code #{codeattr}>test</code>"}, false)
+      assert_html_output({"<pre #{classattr}>test</pre>" => "<pre>test</pre>"}, false)
+      assert_html_output({"<kbd #{classattr}>test</kbd>" => "<kbd>test</kbd>"}, false)
     end
 
     assert_html_output({"<notextile class=\"foo\">test</notextile>" => "test"}, false)
@@ -595,9 +617,29 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
 
   def test_should_allow_valid_language_class_attribute_on_code_tags
     # language name is double-quoted
-    assert_html_output({"<code class=\"ruby\">test</code>" => "<code class=\"ruby syntaxhl\"><span class=\"nb\">test</span></code>"}, false)
+    assert_html_output(
+      {"<code class=\"ruby\">test</code>" =>
+         "<code class=\"ruby syntaxhl\" data-language=\"ruby\"><span class=\"nb\">test</span></code>"},
+      false
+    )
     # language name is single-quoted
-    assert_html_output({"<code class='ruby'>test</code>" => "<code class=\"ruby syntaxhl\"><span class=\"nb\">test</span></code>"}, false)
+    assert_html_output(
+      {"<code class='ruby'>test</code>" =>
+         "<code class=\"ruby syntaxhl\" data-language=\"ruby\"><span class=\"nb\">test</span></code>"},
+      false
+    )
+  end
+
+  def test_should_preserve_code_language_class_attribute_in_data_language
+    assert_html_output(
+      {
+        "<code class=\"foolang\">unsupported language</code>" =>
+          "<code data-language=\"foolang\">unsupported language</code>",
+        "<code class=\"c-k&r\">special-char language</code>" =>
+          "<code data-language=\"c-k&#38;r\">special-char language</code>",
+      },
+      false
+    )
   end
 
   def test_should_not_allow_valid_language_class_attribute_on_non_code_offtags
@@ -673,6 +715,38 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
       <p>&lt;pree&gt;<br />
         This is some text<br />
       &lt;/pree&gt;</p>
+    EXPECTED
+    assert_equal expected.gsub(%r{[\r\n\t]}, ''), to_html(text).gsub(%r{[\r\n\t]}, '')
+  end
+
+  def test_should_remove_html_comments
+    text = <<~STR
+      <!-- begin -->
+      Hello <!-- comment between words -->world.
+
+      <!--
+        multi-line
+      comment -->Foo
+
+      <pre>
+      This is a code block.
+      <p>
+      <!-- comments in a code block should be preserved -->
+      </p>
+      </pre>
+    STR
+    expected = <<~EXPECTED
+      <p>Hello world.</p>
+
+      <p>Foo</p>
+
+      <pre>
+      This is a code block.
+      &lt;p&gt;
+      &lt;!-- comments in a code block should be preserved --&gt;
+      &lt;/p&gt;
+      </pre>
+
     EXPECTED
     assert_equal expected.gsub(%r{[\r\n\t]}, ''), to_html(text).gsub(%r{[\r\n\t]}, '')
   end

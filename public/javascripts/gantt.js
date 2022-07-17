@@ -1,5 +1,5 @@
 /* Redmine - project management software
-   Copyright (C) 2006-2020  Jean-Philippe Lang */
+   Copyright (C) 2006-2022  Jean-Philippe Lang */
 
 var draw_gantt = null;
 var draw_top;
@@ -241,25 +241,28 @@ ganttEntryClick = function(e){
   var iconChange = null;
   if(subject.hasClass('open'))
     iconChange = function(element){
-      $(element).find('.expander').switchClass('icon-expended', 'icon-collapsed');
+      $(element).find('.expander').switchClass('icon-expanded', 'icon-collapsed');
       $(element).removeClass('open');
     };
   else
     iconChange = function(element){
-      $(element).find('.expander').switchClass('icon-collapsed', 'icon-expended');
+      $(element).find('.expander').switchClass('icon-collapsed', 'icon-expanded');
       $(element).addClass('open');
     };
   iconChange(subject);
   subject.nextAll('div').each(function(_, element){
     var el = $(element);
     var json = el.data('collapse-expand');
+    var number_of_rows = el.data('number-of-rows');
+    var el_task_bars = '#gantt_area form > div[data-collapse-expand="' + json.obj_id + '"][data-number-of-rows="' + number_of_rows + '"]';
+    var el_selected_columns = 'td.gantt_selected_column div[data-collapse-expand="' + json.obj_id + '"][data-number-of-rows="' + number_of_rows + '"]';
     if(out_of_hierarchy || parseInt(el.css('left')) <= subject_left){
       out_of_hierarchy = true;
       if(target_shown == null) return false;
 
       var new_top_val = parseInt(el.css('top')) + total_height * (target_shown ? -1 : 1);
       el.css('top', new_top_val);
-      $('#gantt_area form > div[data-collapse-expand="' + json.obj_id + '"], td.gantt_selected_column div[data-collapse-expand="' + json.obj_id + '"]').each(function(_, el){
+      $([el_task_bars, el_selected_columns].join()).each(function(_, el){
         $(el).css('top', new_top_val);
       });
       return true;
@@ -272,15 +275,14 @@ ganttEntryClick = function(e){
       total_height = 0;
     }
     if(is_shown == target_shown){
-      $('#gantt_area form > div[data-collapse-expand="' + json.obj_id + '"]').each(function(_, task) {
+      $(el_task_bars).each(function(_, task) {
         var el_task = $(task);
         if(!is_shown)
           el_task.css('top', target_top + total_height);
         if(!el_task.hasClass('tooltip'))
           el_task.toggle(!is_shown);
       });
-      $('td.gantt_selected_column div[data-collapse-expand="' + json.obj_id + '"]'
-          ).each(function (_, attr) {
+      $(el_selected_columns).each(function (_, attr) {
         var el_attr = $(attr);
         if (!is_shown)
           el_attr.css('top', target_top + total_height);

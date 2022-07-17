@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,13 +25,15 @@ class ProjectsControllerTest < Redmine::ControllerTest
            :trackers, :projects_trackers, :issue_statuses,
            :enabled_modules, :enumerations, :boards, :messages,
            :attachments, :custom_fields, :custom_values, :time_entries,
-           :wikis, :wiki_pages, :wiki_contents, :wiki_content_versions
+           :wikis, :wiki_pages, :wiki_contents, :wiki_content_versions,
+           :roles, :queries
 
   include Redmine::I18n
 
   def setup
     @request.session[:user_id] = nil
     Setting.default_language = 'en'
+    ActiveJob::Base.queue_adapter = :inline
   end
 
   def test_index_by_anonymous_should_not_show_private_projects
@@ -95,26 +97,28 @@ class ProjectsControllerTest < Redmine::ControllerTest
   end
 
   def test_index_as_list_should_format_column_value
-    get :index, :params => {
-      :c => ['name', 'status', 'short_description', 'homepage', 'parent_id', 'identifier', 'is_public', 'created_on', 'cf_3'],
-      :display_type => 'list'
-    }
-    assert_response :success
+    with_settings :text_formatting => 'textile' do
+      get :index, :params => {
+        :c => ['name', 'status', 'short_description', 'homepage', 'parent_id', 'identifier', 'is_public', 'created_on', 'cf_3'],
+        :display_type => 'list'
+      }
+      assert_response :success
 
-    project = Project.find(1)
-    assert_select 'table.projects' do
-      assert_select 'tr[id=?]', 'project-1' do
-        assert_select 'td.name a[href=?]', '/projects/ecookbook', :text => 'eCookbook'
-        assert_select 'td.status', :text => 'active'
-        assert_select 'td.short_description', :text => 'Recipes management application'
-        assert_select 'td.homepage a.external', :text => 'http://ecookbook.somenet.foo/'
-        assert_select 'td.identifier', :text => 'ecookbook'
-        assert_select 'td.is_public', :text => 'Yes'
-        assert_select 'td.created_on', :text => format_time(project.created_on)
-        assert_select 'td.cf_3.list', :text => 'Stable'
-      end
-      assert_select 'tr[id=?]', 'project-4' do
-        assert_select 'td.parent_id a[href=?]', '/projects/ecookbook', :text => 'eCookbook'
+      project = Project.find(1)
+      assert_select 'table.projects' do
+        assert_select 'tr[id=?]', 'project-1' do
+          assert_select 'td.name a[href=?]', '/projects/ecookbook', :text => 'eCookbook'
+          assert_select 'td.status', :text => 'active'
+          assert_select 'td.short_description', :text => 'Recipes management application'
+          assert_select 'td.homepage a.external', :text => 'http://ecookbook.somenet.foo/'
+          assert_select 'td.identifier', :text => 'ecookbook'
+          assert_select 'td.is_public', :text => 'Yes'
+          assert_select 'td.created_on', :text => format_time(project.created_on)
+          assert_select 'td.cf_3.list', :text => 'Stable'
+        end
+        assert_select 'tr[id=?]', 'project-4' do
+          assert_select 'td.parent_id a[href=?]', '/projects/ecookbook', :text => 'eCookbook'
+        end
       end
     end
   end
@@ -138,8 +142,8 @@ class ProjectsControllerTest < Redmine::ControllerTest
     }
     assert_response :success
 
-    child_level1 = css_select('tr#project-5').map {|e| e.attr('class')}.first.split(' ')
-    child_level2 = css_select('tr#project-6').map {|e| e.attr('class')}.first.split(' ')
+    child_level1 = css_select('tr#project-5').map {|e| e.attr(:class)}.first.split(' ')
+    child_level2 = css_select('tr#project-6').map {|e| e.attr(:class)}.first.split(' ')
 
     assert_include 'idnt', child_level1
     assert_include 'idnt-1', child_level1
@@ -203,7 +207,7 @@ class ProjectsControllerTest < Redmine::ControllerTest
     with_settings :date_format => '%m/%d/%Y' do
       get :index, :params => {:format => 'csv'}
       assert_response :success
-      assert_equal 'text/csv', response.media_type
+      assert_equal 'text/csv; header=present', response.media_type
     end
   end
 
@@ -246,6 +250,28 @@ class ProjectsControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_select '.query-totals'
     assert_select ".total-for-cf-#{field.id} span.value", :text => '9'
+  end
+
+  def test_index_should_retrieve_default_query
+    query = ProjectQuery.find(11)
+    ProjectQuery.stubs(:default).returns query
+
+    [nil, 1].each do |user_id|
+      @request.session[:user_id] = user_id
+      get :index
+      assert_select 'h2', text: query.name
+    end
+  end
+
+  def test_index_should_ignore_default_query_with_without_default
+    query = ProjectQuery.find(11)
+    ProjectQuery.stubs(:default).returns query
+
+    [nil, 1].each do |user_id|
+      @request.session[:user_id] = user_id
+      get :index, params: { set_filter: '1', without_default: '1' }
+      assert_select 'h2', text: I18n.t(:label_project_plural)
+    end
   end
 
   def test_autocomplete_js
@@ -750,12 +776,31 @@ class ProjectsControllerTest < Redmine::ControllerTest
     assert_select 'table.issue-report td.total a', :text => %r{\A[1-9]\d*\z}
   end
 
+  def test_show_should_not_display_subprojects_trackers_when_subprojects_issues_is_not_displayed
+    project = Project.find('ecookbook')
+    tracker = project.trackers.find_by(name: 'Support request')
+    project.trackers.delete(tracker)
+    @request.session[:user_id] = 2
+
+    with_settings :display_subprojects_issues => '1' do
+      get(:show, :params => {:id => 'ecookbook'})
+      assert_response :success
+      assert_select 'table.issue-report td.name', :text => 'Support request', :count => 1
+    end
+
+    with_settings :display_subprojects_issues => '0' do
+      get(:show, :params => {:id => 'ecookbook'})
+      assert_response :success
+      assert_select 'table.issue-report td.name', :text => 'Support request', :count => 0
+    end
+  end
+
   def test_show_should_spent_and_estimated_time
     @request.session[:user_id] = 1
     get(:show, :params => {:id => 'ecookbook'})
     assert_select 'div.spent_time.box>ul' do
-      assert_select '>li:nth-child(1)', :text => 'Estimated time: 203.50 hours'
-      assert_select '>li:nth-child(2)', :text => 'Spent time: 162.90 hours'
+      assert_select '>li:nth-child(1)', :text => 'Estimated time: 203:30 hours'
+      assert_select '>li:nth-child(2)', :text => 'Spent time: 162:54 hours'
     end
   end
 
@@ -896,6 +941,28 @@ class ProjectsControllerTest < Redmine::ControllerTest
     assert_select 'select#project_custom_field_values_3', :count => 0
   end
 
+  def test_settings_issue_tracking
+    @request.session[:user_id] = 1
+    project = Project.find(1)
+    project.default_version_id = 3
+    project.save!
+
+    get(
+      :settings,
+      :params => {
+        :id => 'ecookbook',
+        :tab => 'issues',
+      }
+    )
+    assert_response :success
+
+    assert_select 'form[id=?]', 'project_issue_tracking', 1
+    assert_select 'input[name=?]', 'project[tracker_ids][]'
+    assert_select 'input[name=?]', 'project[issue_custom_field_ids][]'
+    assert_select 'select[name=?]', 'project[default_version_id]', 1
+    assert_select 'select[name=?]', 'project[default_assigned_to_id]', 1
+  end
+
   def test_update
     @request.session[:user_id] = 2 # manager
     post(
@@ -1028,6 +1095,16 @@ class ProjectsControllerTest < Redmine::ControllerTest
     assert_select '.warning', :text => /Are you sure you want to delete this project/
   end
 
+  def test_destroy_leaf_project_with_wrong_confirmation_should_show_confirmation
+    @request.session[:user_id] = 1 # admin
+
+    assert_no_difference 'Project.count' do
+      delete(:destroy, :params => {:id => 2, :confirm => 'wrong'})
+      assert_response :success
+    end
+    assert_select '.warning', :text => /Are you sure you want to delete this project/
+  end
+
   def test_destroy_without_confirmation_should_show_confirmation_with_subprojects
     set_tmp_attachments_directory
     @request.session[:user_id] = 1 # admin
@@ -1042,6 +1119,25 @@ class ProjectsControllerTest < Redmine::ControllerTest
                             'eCookbook Subproject 2'].join(', ')
   end
 
+  def test_destroy_should_mark_project_and_subprojects_for_deletion
+    queue_adapter_was = ActiveJob::Base.queue_adapter
+    ActiveJob::Base.queue_adapter = :test
+    set_tmp_attachments_directory
+    @request.session[:user_id] = 1 # admin
+
+    assert_no_difference 'Project.count' do
+      delete(:destroy, :params => {:id => 1, :confirm => 'ecookbook'})
+      assert_redirected_to '/admin/projects'
+    end
+    assert p = Project.find_by_id(1)
+    assert_equal Project::STATUS_SCHEDULED_FOR_DELETION, p.status
+    p.descendants.each do |child|
+      assert_equal Project::STATUS_SCHEDULED_FOR_DELETION, child.status
+    end
+  ensure
+    ActiveJob::Base.queue_adapter = queue_adapter_was
+  end
+
   def test_destroy_with_confirmation_should_destroy_the_project_and_subprojects
     set_tmp_attachments_directory
     @request.session[:user_id] = 1 # admin
@@ -1051,12 +1147,31 @@ class ProjectsControllerTest < Redmine::ControllerTest
         :destroy,
         :params => {
           :id => 1,
-          :confirm => 1
+          :confirm => 'ecookbook'
         }
       )
       assert_redirected_to '/admin/projects'
     end
     assert_nil Project.find_by_id(1)
+  end
+
+  def test_destroy_should_destroy_archived_project
+    set_tmp_attachments_directory
+    @request.session[:user_id] = 1 # admin
+
+    Project.find_by_id(2).update_attribute :status, Project::STATUS_ARCHIVED
+
+    assert_difference 'Project.count', -1 do
+      delete(
+        :destroy,
+        :params => {
+          :id => 2,
+          :confirm => 'onlinestore'
+        }
+      )
+      assert_redirected_to '/admin/projects'
+    end
+    assert_nil Project.find_by_id(2)
   end
 
   def test_destroy_with_normal_user_should_destroy
@@ -1068,7 +1183,26 @@ class ProjectsControllerTest < Redmine::ControllerTest
         :destroy,
         :params => {
           :id => 2,
-          :confirm => 1
+          :confirm => 'onlinestore'
+        }
+      )
+      assert_redirected_to '/projects'
+    end
+    assert_nil Project.find_by_id(2)
+  end
+
+  def test_destroy_with_normal_user_should_destroy_closed_project
+    set_tmp_attachments_directory
+    @request.session[:user_id] = 2 # non-admin
+
+    Project.find_by_id(2).update_attribute :status, Project::STATUS_CLOSED
+
+    assert_difference 'Project.count', -1 do
+      delete(
+        :destroy,
+        :params => {
+          :id => 2,
+          :confirm => 'onlinestore'
         }
       )
       assert_redirected_to '/projects'
@@ -1085,12 +1219,37 @@ class ProjectsControllerTest < Redmine::ControllerTest
         :destroy,
         :params => {
           :id => 1,
-          :confirm => 1
+          :confirm => 'ecookbook'
         }
       )
       assert_response 403
     end
     assert Project.find(1)
+  end
+
+  def test_bulk_destroy_should_require_admin
+    @request.session[:user_id] = 2 # non-admin
+    delete :bulk_destroy, params: { ids: [1, 2], confirm: 'Yes' }
+    assert_response 403
+  end
+
+  def test_bulk_destroy_should_require_confirmation
+    @request.session[:user_id] = 1 # admin
+    assert_difference 'Project.count', 0 do
+      delete :bulk_destroy, params: { ids: [1, 2] }
+    end
+    assert Project.find(1)
+    assert Project.find(2)
+    assert_response 200
+  end
+
+  def test_bulk_destroy_should_delete_projects
+    @request.session[:user_id] = 1 # admin
+    assert_difference 'Project.count', -2 do
+      delete :bulk_destroy, params: { ids: [2, 6], confirm: 'Yes' }
+    end
+    assert_equal 0, Project.where(id: [2, 6]).count
+    assert_redirected_to '/admin/projects'
   end
 
   def test_archive

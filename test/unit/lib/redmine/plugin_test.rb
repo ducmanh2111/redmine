@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,6 +27,10 @@ class Redmine::PluginTest < ActiveSupport::TestCase
     @klass.directory = Rails.root.join('test/fixtures/plugins')
     # In case some real plugins are installed
     @klass.clear
+
+    # Change plugin loader's directory for testing
+    Redmine::PluginLoader.directory = @klass.directory
+    Redmine::PluginLoader.setup
   end
 
   def teardown
@@ -55,6 +59,7 @@ class Redmine::PluginTest < ActiveSupport::TestCase
     assert_equal 'http://example.net/jsmith', plugin.author_url
     assert_equal 'This is a test plugin', plugin.description
     assert_equal '0.0.1', plugin.version
+    assert_equal File.join(@klass.directory, 'foo_plugin', 'assets'), plugin.assets_directory
   end
 
   def test_register_should_raise_error_if_plugin_directory_does_not_exist
@@ -192,9 +197,9 @@ class Redmine::PluginTest < ActiveSupport::TestCase
   end
 
   def test_settings_warns_about_possible_partial_collision
-    @klass.register(:foo_plugin) { settings :partial => 'foo/settings' }
+    @klass.register(:foo_plugin) {settings :partial => 'foo/settings'}
     Rails.logger.expects(:warn)
-    @klass.register(:other_plugin) { settings :partial => 'foo/settings' }
+    @klass.register(:other_plugin) {settings :partial => 'foo/settings'}
   end
 
   def test_migrate_redmine_plugin

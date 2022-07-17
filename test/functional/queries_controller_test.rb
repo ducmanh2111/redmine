@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -139,25 +139,25 @@ class QueriesControllerTest < Redmine::ControllerTest
 
   def test_new_with_gantt_params
     @request.session[:user_id] = 2
-    get :new, :params => { :gantt => 1 }
+    get :new, :params => {:gantt => 1}
     assert_response :success
 
     assert_select 'input[type="hidden"]#gantt', 1
     assert_select 'fieldset#options'
     assert_select 'fieldset#filters'
-    assert_select 'fieldset legend', { :text => 'Sort', :count => 0 }
+    assert_select 'fieldset legend', {:text => 'Sort', :count => 0}
     assert_select 'fieldset#columns'
   end
 
   def test_new_with_calendar_params
     @request.session[:user_id] = 2
-    get :new, :params => { :calendar => 1 }
+    get :new, :params => {:calendar => 1}
     assert_response :success
 
     assert_select 'input[type="hidden"]#calendar', 1
     assert_select 'fieldset#options', :count => 0
     assert_select 'fieldset#filters'
-    assert_select 'fieldset legend', { :text => 'Sort', :count => 0 }
+    assert_select 'fieldset legend', {:text => 'Sort', :count => 0}
     assert_select 'fieldset#columns', :count => 0
   end
 
@@ -168,7 +168,7 @@ class QueriesControllerTest < Redmine::ControllerTest
 
     assert_select 'fieldset#options'
     assert_select 'fieldset#filters'
-    assert_select 'fieldset legend', { :text => 'Sort' }
+    assert_select 'fieldset legend', {:text => 'Sort'}
     assert_select 'fieldset#columns'
   end
 
@@ -585,6 +585,33 @@ class QueriesControllerTest < Redmine::ControllerTest
     assert q.valid?
   end
 
+  def test_create_admin_projects_query_should_redirect_to_admin_projects
+    @request.session[:user_id] = 1
+
+    q = new_record(ProjectQuery) do
+      post(
+        :create,
+        :params => {
+          :type => 'ProjectQuery',
+          :default_columns => '1',
+          :f => ["status"],
+          :op => {
+            "status" => "="
+          },
+          :v => {
+            "status" => ['1']
+          },
+          :query => {
+            "name" => "test_new_project_public_query", "visibility" => "2"
+          },
+          :admin_projects => 1
+        }
+      )
+    end
+
+    assert_redirected_to :controller => 'admin', :action => 'projects', :query_id => q.id, :admin_projects => 1
+  end
+
   def test_edit_global_public_query
     @request.session[:user_id] = 1
     get(:edit, :params => {:id => 4})
@@ -690,6 +717,33 @@ class QueriesControllerTest < Redmine::ControllerTest
     assert q.valid?
   end
 
+  def test_update_admin_projects_query
+    q = ProjectQuery.create(:name => 'project_query')
+    @request.session[:user_id] = 1
+
+    put(
+      :update,
+      :params => {
+        :id => q.id,
+        :default_columns => '1',
+        :fields => ["status"],
+        :operators => {
+          "status" => "="
+        },
+        :values => {
+          "status" => ['1']
+        },
+        :query => {
+          "name" => "test_project_query_updated", "visibility" => "2"
+        },
+        :admin_projects => 1
+      }
+    )
+
+    assert_redirected_to :controller => 'admin', :action => 'projects', :query_id => q.id, :admin_projects => 1
+    assert Query.find_by_name('test_project_query_updated')
+  end
+
   def test_update_with_failure
     @request.session[:user_id] = 1
     put(
@@ -787,7 +841,7 @@ class QueriesControllerTest < Redmine::ControllerTest
     assert_equal 'application/json', response.media_type
     json = ActiveSupport::JSON.decode(response.body)
     assert_equal 4, json.count
-    assert_include ["Private child of eCookbook","5"], json
+    assert_include ["Private child of eCookbook", "5"], json
   end
 
   def test_assignee_filter_should_return_active_and_locked_users_grouped_by_status
@@ -894,5 +948,51 @@ class QueriesControllerTest < Redmine::ControllerTest
     assert_include ["Dave Lopper", "3", "active"], json
     assert_include ["Dave2 Lopper2", "5", "locked"], json
     assert_include ["A Team", "10", "active"], json
+  end
+
+  def test_watcher_filter_with_permission_should_show_members_and_groups_globally
+    # This user has view_issue_watchers permission
+    @request.session[:user_id] = 1
+    get(
+      :filter,
+      :params => {
+        :type => 'IssueQuery',
+        :name => 'watcher_id'
+      }
+    )
+    assert_response :success
+    assert_equal 'application/json', response.media_type
+    json = ActiveSupport::JSON.decode(response.body)
+
+    assert_equal 8, json.count
+    # "me" value should not be grouped
+    assert_include ['<< me >>', 'me'], json
+    assert_include ['Dave Lopper', '3', 'active'], json
+    assert_include ['Dave2 Lopper2', '5', 'locked'], json
+    assert_include ['A Team', '10', 'active'], json
+  end
+
+  def test_activity_filter_should_return_active_and_system_activity_ids
+    TimeEntryActivity.create!(:name => 'Design', :parent_id => 9, :project_id => 1)
+    TimeEntryActivity.create!(:name => 'QA', :active => false, :parent_id => 11, :project_id => 1)
+    TimeEntryActivity.create!(:name => 'Inactive Activity', :active => true, :parent_id => 14, :project_id => 1)
+
+    @request.session[:user_id] = 2
+    get(
+      :filter,
+      :params => {
+        :project_id => 1,
+        :type => 'TimeEntryQuery',
+        :name => 'activity_id'
+      }
+    )
+    assert_response :success
+    assert_equal 'application/json', response.media_type
+    json = ActiveSupport::JSON.decode(response.body)
+
+    assert_equal 3, json.count
+    assert_include ["Design", "9"], json
+    assert_include ["Development", "10"], json
+    assert_include ["Inactive Activity", "14"], json
   end
 end

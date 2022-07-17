@@ -196,6 +196,7 @@ bg:
   notice_issue_not_closable_by_open_tasks: Тази задача не може да бъде затворена, понеже има поне една отворена подзадача.
   notice_issue_not_closable_by_blocking_issue: Тази задача не може да бъде затворена, понеже е блокирана от поне една отворена задача.
   notice_issue_not_reopenable_by_closed_parent_issue: Тази задача не може да бъде отворена отново, понеже нейната родителска задача е затворена.
+  notice_invalid_watcher: 'Невалиден наблюдател: Потребителят няма да приема известия понеже той/тя няма достъп до този обект.'
 
   error_can_t_load_default_data: "Грешка при зареждане на началната информация: %{value}"
   error_scm_not_found: Несъществуващ обект в хранилището.
@@ -223,8 +224,9 @@ bg:
   warning_attachments_not_saved: "%{count} файла не бяха записани."
   error_password_expired: Вашата парола е с изтекъл срок или администраторът изисква да я смените.
   error_invalid_file_encoding: Файлът няма валидно %{encoding} кодиране.
-  error_invalid_csv_file_or_settings: Файлът не е CSV файл или не съответства на зададеното по-долу
+  error_invalid_csv_file_or_settings: Файлът не е CSV файл или не съответства на зададеното по-долу (%{value})
   error_can_not_read_import_file: Грешка по време на четене на импортирания файл
+  error_no_data_in_file: файлът не съдържа никакви данни
   error_attachment_extension_not_allowed: Файлове от тип %{extension} не са позволени
   error_ldap_bind_credentials: Невалидни LDAP име/парола
   error_no_tracker_allowed_for_new_issue_in_project: Проектът няма тракери, за които да създавате задачи
@@ -236,6 +238,17 @@ bg:
   error_can_not_delete_auth_source: Този режим за идентификация се използва и не може да бъде премахнат.
   error_spent_on_future_date: Не е възможно да се отчете изразходвано време на дата в бъдещето
   error_not_allowed_to_log_time_for_other_users: Вие нямате разрешение да записвате изразходвано време за други потребители
+  error_can_not_execute_macro_html: Грешка при изпълнение на <strong>%{name}</strong> макрос
+    (%{error})
+  error_macro_does_not_accept_block: Този макрос не приема текстов блок
+  error_childpages_macro_no_argument: Без аргумент този макрос може да бъде викан само от wiki страници
+  error_circular_inclusion: Намерено е циклично включване
+  error_page_not_found: Страницата не е намерена
+  error_filename_required: Изисква се име на файл
+  error_invalid_size_parameter: Невалиден параметър за размер
+  error_attachment_not_found: Прикаченият файл  %{name} не е намерен
+  error_invalid_authenticity_token: Invalid form authenticity token.
+  error_query_statement_invalid: Изпълнението на заявката завърши с грешка и тя беше записана. Моля докладвайте тази грешка на администратора на Redmine.
 
   mail_subject_lost_password: "Вашата парола (%{value})"
   mail_body_lost_password: 'За да смените паролата си, използвайте следния линк:'
@@ -261,6 +274,9 @@ bg:
   mail_body_security_notification_notify_disabled: Имейл адрес %{value} вече не получава известия.
   mail_body_settings_updated: ! 'Изменения в конфигурацията:'
   mail_body_password_updated: Вашата парола е сменена.
+  mail_destroy_project_failed: Проект %{value} не беше изтрит.
+  mail_destroy_project_successful: Проект %{value} беше изтрит успешно.
+  mail_destroy_project_with_subprojects_successful: Проект %{value} и неговите подпроекти бяха изтрити успешно.
 
   field_name: Име
   field_description: Описание
@@ -299,7 +315,7 @@ bg:
   field_priority: Приоритет
   field_fixed_version: Планувана версия
   field_user: Потребител
-  field_principal: Principal
+  field_principal: User or Group
   field_role: Роля
   field_homepage: Начална страница
   field_is_public: Публичен
@@ -315,6 +331,7 @@ bg:
   field_password: Парола
   field_new_password: Нова парола
   field_password_confirmation: Потвърждение
+  field_twofa_scheme: Схема за двуфакторна автентикация
   field_version: Версия
   field_type: Тип
   field_host: Хост
@@ -353,7 +370,6 @@ bg:
   field_parent_title: Родителска страница
   field_editable: Editable
   field_watcher: Наблюдател
-  field_identity_url: OpenID URL
   field_content: Съдържание
   field_group_by: Групиране на резултатите по
   field_sharing: Sharing
@@ -398,6 +414,9 @@ bg:
   field_history_default_tab: Таб по подразбиране в историята на задачите
   field_unique_id: Уникален ID
   field_toolbar_language_options: Езици за избор в <pre><code class="..."> бутон
+  field_twofa_required: Изискване за двуфакторна автентикация
+  field_default_issue_query: Заявка по подразбиране
+  field_default_project_query: Заявка по подразбиране за проекта
 
   setting_app_title: Заглавие
   setting_welcome_text: Допълнителен текст
@@ -409,7 +428,6 @@ bg:
   setting_bulk_download_max_size: Максимален обем за групово изтегляне
   setting_issues_export_limit: Максимален брой задачи за експорт
   setting_mail_from: E-mail адрес за емисии
-  setting_bcc_recipients: Получатели на скрито копие (bcc)
   setting_plain_text_mail: само чист текст (без HTML)
   setting_host_name: Хост
   setting_text_formatting: Форматиране на текста
@@ -448,7 +466,6 @@ bg:
   setting_diff_max_lines_displayed: Максимален брой показвани diff редове
   setting_file_max_size_displayed: Максимален размер на текстовите файлове, показвани inline
   setting_repository_log_display_limit: Максимален брой на показванете ревизии в лог файла
-  setting_openid: Рарешаване на OpenID вход и регистрация
   setting_password_max_age: Изискване за смяна на паролата след
   setting_password_min_length: Минимална дължина на парола
   setting_password_required_char_classes: Задължителни символни класове за пароли
@@ -497,11 +514,13 @@ bg:
   setting_timelog_accept_future_dates: Разрешено отчитане на изразходвано време на дата в бъдещето
   setting_show_status_changes_in_mail_subject: Показване на промените на състоянието на задачите в поле Относно на имейлите
   setting_project_list_defaults: Проектен списък
+  setting_twofa: Двуфакторна автентикация
 
   permission_add_project: Създаване на проект
   permission_add_subprojects: Създаване на подпроекти
   permission_edit_project: Редактиране на проект
   permission_close_project: Затваряне / отваряне на проект
+  permission_delete_project: Изтриване на проект
   permission_select_project_modules: Избор на проектни модули
   permission_manage_members: Управление на членовете (на екип)
   permission_manage_project_activities: Управление на дейностите на проекта
@@ -548,6 +567,9 @@ bg:
   permission_view_wiki_edits: Разглеждане на wiki история
   permission_edit_wiki_pages: Редактиране на wiki страници
   permission_delete_wiki_pages_attachments: Изтриване на прикачени файлове към wiki страници
+  permission_view_wiki_page_watchers: Разглеждане на списъци с наблюдатели на wiki страници
+  permission_add_wiki_page_watchers: Добавяне на наблюдатели на wiki страници
+  permission_delete_wiki_page_watchers: Изтриване на наблюдатели на wiki страници
   permission_protect_wiki_pages: Заключване на wiki страници
   permission_manage_repository: Управление на хранилища
   permission_browse_repository: Разглеждане на хранилища
@@ -560,6 +582,9 @@ bg:
   permission_edit_own_messages: Редактиране на собствени съобщения
   permission_delete_messages: Изтриване на съобщения
   permission_delete_own_messages: Изтриване на собствени съобщения
+  permission_view_message_watchers: Разглеждане на списъка на наблюдателите на съобщения
+  permission_add_message_watchers: Добавяне на наблюдатели на съобщения
+  permission_delete_message_watchers: Изтриване на наблюдатели на съобщения
   permission_export_wiki_pages: Експорт на wiki страници
   permission_manage_subtasks: Управление на подзадачите
   permission_manage_related_issues: Управление на връзките между задачи и ревизии
@@ -634,7 +659,6 @@ bg:
   label_information: Информация
   label_information_plural: Информация
   label_register: Регистрация
-  label_login_with_open_id_option: или вход чрез OpenID
   label_password_lost: Забравена парола
   label_password_required: Потвърдете вашата парола, за да продължите
   label_home: Начало
@@ -684,6 +708,7 @@ bg:
   label_attachment_delete: Изтриване
   label_attachment_plural: Файлове
   label_file_added: Добавен файл
+  label_attachment_description: Описание на файла
   label_report: Справка
   label_report_plural: Справки
   label_news: Новини
@@ -872,6 +897,7 @@ bg:
   label_copied_from: копирана от
   label_stay_logged_in: Запомни ме
   label_disabled: забранено
+  label_optional: по избор
   label_show_completed_versions: Показване на реализирани версии
   label_me: аз
   label_board: Форум
@@ -906,6 +932,7 @@ bg:
   label_changeset_plural: Ревизии
   label_default_columns: По подразбиране
   label_no_change_option: (Без промяна)
+  label_bulk_edit: Групово редактиране
   label_bulk_edit_selected_issues: Групово редактиране на задачи
   label_bulk_edit_selected_time_entries: Групово редактиране на записи за използвано време
   label_theme: Тема
@@ -936,12 +963,16 @@ bg:
   label_downloads_abbr: D/L
   label_optional_description: Незадължително описание
   label_add_another_file: Добавяне на друг файл
+  label_auto_watch_on: Автоматично включване в наблюдателите
+  label_auto_watch_on_issue_contributed_to: Задачи в които имам участие
   label_preferences: Предпочитания
   label_chronological_order: Хронологичен ред
   label_reverse_chronological_order: Обратен хронологичен ред
   label_incoming_emails: Входящи e-mail-и
   label_generate_key: Генериране на ключ
   label_issue_watchers: Наблюдатели
+  label_message_watchers: Наблюдатели
+  label_wiki_page_watchers: Наблюдатели
   label_example: Пример
   label_display: Показване
   label_sort: Сортиране
@@ -971,6 +1002,7 @@ bg:
   label_missing_api_access_key: Липсващ API ключ
   label_api_access_key_created_on: API ключ за достъп е създаден преди %{value}
   label_profile: Профил
+  label_subtask: Подзадача
   label_subtask_plural: Подзадачи
   label_project_copy_notifications: Изпращане на e-mail известия по време на копирането на проекта
   label_import_notifications: Изпращане e-mail известия по време на импортирането
@@ -995,6 +1027,8 @@ bg:
   label_fields_permissions: Видимост на полетата
   label_readonly: Само за четене
   label_required: Задължително
+  label_required_lower: задължително
+  label_required_administrators: изисквано за администратори
   label_hidden: Скрит
   label_attribute_of_project: Project's %{name}
   label_attribute_of_issue: Issue's %{name}
@@ -1073,6 +1107,10 @@ bg:
   label_optgroup_others: Други проекти
   label_optgroup_recents: Последно използвани
   label_last_notes: Последни коментари
+  label_default_queries:
+    for_all_projects: За всички проекти
+    for_current_project: За този проект
+    for_all_users: За всички потребители
   label_nothing_to_preview: Няма нищо за предварителен преглед
   label_inherited_from_parent_project: Наследени от родителския проект
   label_inherited_from_group: Наследени от група %{name}
@@ -1092,6 +1130,7 @@ bg:
   label_display_type_board: Таблица
   label_my_bookmarks: Моите отметки
   label_assign_to_me: Назначи на мен
+  label_default_query: Заявка по подразбиране
 
   button_login: Вход
   button_submit: Изпращане
@@ -1120,6 +1159,7 @@ bg:
   button_back: Назад
   button_cancel: Отказ
   button_activate: Активация
+  button_disable: Забрана
   button_sort: Сортиране
   button_log_time: Отделяне на време
   button_rollback: Върни се към тази ревизия
@@ -1133,7 +1173,9 @@ bg:
   button_change_password: Промяна на парола
   button_copy: Копиране
   button_copy_and_follow: Копиране и продължаване
+  button_copy_link: Копиране на връзката
   button_annotate: Анотация
+  button_fetch_changesets: Извличане на ревизиите
   button_update: Обновяване
   button_configure: Конфигуриране
   button_quote: Цитат
@@ -1149,6 +1191,11 @@ bg:
   button_project_bookmark_delete: Премахване на отметка
   button_filter: Филтър
   button_actions: Действия
+  button_add_subtask: Добавяне на подзадача
+  button_save_object: Запис %{object_name}
+  button_edit_object: Редактиране %{object_name}
+  button_delete_object: Изтриване %{object_name}
+  button_create_and_follow: Създаване и продължаване
 
   status_active: активен
   status_registered: регистриран
@@ -1157,6 +1204,7 @@ bg:
   project_status_active: активен
   project_status_closed: затворен
   project_status_archived: архивиран
+  project_status_scheduled_for_deletion: определен за изтриване
 
   version_status_open: отворена
   version_status_locked: заключена
@@ -1166,9 +1214,18 @@ bg:
 
   text_select_mail_notifications: Изберете събития за изпращане на e-mail.
   text_regexp_info: пр. ^[A-Z0-9]+$
-  text_min_max_length_info: 0 - без ограничения
   text_project_destroy_confirmation: Сигурни ли сте, че искате да изтриете проекта и данните в него?
+  text_projects_bulk_destroy_confirmation: Сигурен ли сте, че искате да изтриете избраните проекти и техните данни?
+  text_projects_bulk_destroy_head: |
+    Вие сте на път да изтриете следващите проекти, включително и техните подпроекти и свързаните с тях данни.
+    Моля прегледайте информацията по-долу и потвърдете, че това наистина е вашето намерение.
+    Това действие не може да бъде върнато назад.
+  text_projects_bulk_destroy_confirm: За да потвърдите, моля въведете "%{yes}" в полето отдолу.
   text_subprojects_destroy_warning: "Неговите подпроекти: %{value} също ще бъдат изтрити."
+  text_subprojects_bulk_destroy: 'включително и неговите подпроекти: %{value}'
+  text_project_close_confirmation: Сигурни ли сте, че желаете да затворите проект '%{value}' и да го направите достъпен само за четене?
+  text_project_reopen_confirmation: Сигурни ли сте, че желаете да отворите отново проект %{value}'?
+  text_project_archive_confirmation: Сигурни ли сте, че желаете да архивирате проект '%{value}'?
   text_workflow_edit: Изберете роля и тракер за да редактирате работния процес
   text_are_you_sure: Сигурни ли сте?
   text_journal_changed: "%{label} променен от %{old} на %{new}"
@@ -1209,6 +1266,7 @@ bg:
   text_default_administrator_account_changed: Сменен фабричния администраторски профил
   text_file_repository_writable: Възможност за писане в хранилището с файлове
   text_plugin_assets_writable: Папката на приставките е разрешена за запис
+  text_all_migrations_have_been_run: Всички миграции на базата данни са изпълнени
   text_minimagick_available: Наличен MiniMagick (по избор)
   text_convert_available: Наличен ImageMagick convert (по избор)
   text_gs_available: Налична поддръжка за ImageMagick PDF (по избор)
@@ -1251,6 +1309,8 @@ bg:
   text_select_apply_tracker: Изберете тракер
   text_avatar_server_config_html: Текущият сървър на аватари е <a href="%{url}">%{url}</a>.
     Бие можете да го конфигурирате в config/configuration.yml.
+  text_allowed_queries_to_select: Само публичните (за всички потребители) заявки са достъпни за избор
+  text_setting_config_change: Вие можете да конфигурирате поведението в config/configuration.yml. Моля, рестартирайте Redmine след редактиране на файла.
 
   default_role_manager: Мениджър
   default_role_developer: Разработчик
@@ -1301,65 +1361,60 @@ bg:
   text_project_is_public_anonymous: Публичните проекти са достъпни и тяхното съдържание е видимо без ограничения в мрежата.
   label_import_time_entries: Импортиране на записи за използвано време
   label_import_users: Импортиране на потребители
-  setting_twofa: Two-factor authentication
-  label_optional: optional
-  label_required_lower: required
-  button_disable: Disable
+
   twofa__totp__name: Authenticator app
-  twofa__totp__text_pairing_info_html: Scan this QR code or enter the plain text key
-    into a TOTP app (e.g. <a href="https://support.google.com/accounts/answer/1066447">Google
+  twofa__totp__text_pairing_info_html: Сканирайте този QR код или въведете текстовия ключ
+    в TOTP приложение (например <a href="https://support.google.com/accounts/answer/1066447">Google
     Authenticator</a>, <a href="https://authy.com/download/">Authy</a>, <a href="https://guide.duo.com/third-party-accounts">Duo
-    Mobile</a>) and enter the code in the field below to activate two-factor authentication.
-  twofa__totp__label_plain_text_key: Plain text key
-  twofa__totp__label_activate: Enable authenticator app
-  twofa_currently_active: 'Currently active: %{twofa_scheme_name}'
-  twofa_not_active: Not activated
-  twofa_label_code: Code
-  twofa_hint_disabled_html: Setting <strong>%{label}</strong> will deactivate and unpair
-    two-factor authentication devices for all users.
-  twofa_hint_required_html: Setting <strong>%{label}</strong> will require all users
-    to set up two-factor authentication at their next login.
-  twofa_label_setup: Enable two-factor authentication
-  twofa_label_deactivation_confirmation: Disable two-factor authentication
-  twofa_notice_select: 'Please select the two-factor scheme you would like to use:'
-  twofa_warning_require: The administrator requires you to enable two-factor authentication.
-  twofa_activated: Two-factor authentication successfully enabled. It is recommended
-    to <a data-method="post" href="%{bc_path}">generate backup codes</a> for your account.
-  twofa_deactivated: Two-factor authentication disabled.
-  twofa_mail_body_security_notification_paired: Two-factor authentication successfully
-    enabled using %{field}.
-  twofa_mail_body_security_notification_unpaired: Two-factor authentication disabled
-    for your account.
-  twofa_mail_body_backup_codes_generated: New two-factor authentication backup codes
-    generated.
-  twofa_mail_body_backup_code_used: A two-factor authentication backup code has been
-    used.
-  twofa_invalid_code: Code is invalid or outdated.
-  twofa_label_enter_otp: Please enter your two-factor authentication code.
-  twofa_too_many_tries: Too many tries.
-  twofa_resend_code: Resend code
-  twofa_code_sent: An authentication code has been sent to you.
-  twofa_generate_backup_codes: Generate backup codes
-  twofa_text_generate_backup_codes_confirmation: This will invalidate all existing backup
-    codes and generate new ones. Would you like to continue?
-  twofa_notice_backup_codes_generated: Your backup codes have been generated.
-  twofa_warning_backup_codes_generated_invalidated: New backup codes have been generated.
-    Your existing codes from %{time} are now invalid.
-  twofa_label_backup_codes: Two-factor authentication backup codes
-  twofa_text_backup_codes_hint: Use these codes instead of a one-time password should
-    you not have access to your second factor. Each code can only be used once. It is
-    recommended to print and store them in a safe place.
-  twofa_text_backup_codes_created_at: Backup codes generated %{datetime}.
-  twofa_backup_codes_already_shown: Backup codes cannot be shown again, please <a data-method="post"
-    href="%{bc_path}">generate new backup codes</a> if required.
-  error_can_not_execute_macro_html: Error executing the <strong>%{name}</strong> macro
-    (%{error})
-  error_macro_does_not_accept_block: This macro does not accept a block of text
-  error_childpages_macro_no_argument: With no argument, this macro can be called from
-    wiki pages only
-  error_circular_inclusion: Circular inclusion detected
-  error_page_not_found: Page not found
-  error_filename_required: Filename required
-  error_invalid_size_parameter: Invalid size parameter
-  error_attachment_not_found: Attachment %{name} not found
-  permission_delete_project: Delete the project
+    Mobile</a>) и въведете кода в полето по-долу, за да активирате двуфакторна автентикация.
+  twofa__totp__label_plain_text_key: Текстов ключ
+  twofa__totp__label_activate: Разрешаване на приложение за автентикация
+  twofa_currently_active: 'Активна автентикация: %{twofa_scheme_name}'
+  twofa_not_active: Не е активирана
+  twofa_label_code: Код
+  twofa_hint_disabled_html: Настройка <strong>%{label}</strong> ще деактивира двуфакторната автентикация за всички потребители.
+  twofa_hint_optional_html: Този избор <strong>%{label}</strong> ще позволи на потребителите да установят двуфакторна автентикация27
+    по желание, освен ако тя не е задължителна от някоя от техните групи.
+  twofa_hint_required_html: Настройка <strong>%{label}</strong> ще изисква всички потребители
+    да установят двуфакторна автентикация при тяхното следващо влизане в Redmine.
+  twofa_hint_required_administrators_html: <strong>%{label}</strong> изглежда като по желание, но ще изисква всички потребители с административни права да установят
+    двуфакторна автентикация при тяхното следващо влизане.
+  twofa_label_setup: Активиране на двуфакторна автентикация
+  twofa_label_deactivation_confirmation: Деактивация на двуфакторната автентикация
+  twofa_notice_select: 'Моля изберете двуфакторна схема, която желаете да използвате:'
+  twofa_warning_require: Администраторът изисква да активирате двуфакторна автентикация.
+  twofa_activated: Двуфакторната автентикация е активирана успешно. Препоръчително е
+    да <a data-method="post" href="%{bc_path}">генерирате резервни кодове</a> за вашия потребителски профил.
+  twofa_deactivated: Двуфакторната автентикация е деактивирана.
+  twofa_mail_body_security_notification_paired: Двуфакторната автентикация е активирана успешно с използване на %{field}.
+  twofa_mail_body_security_notification_unpaired: Двуфакторната автентикация е деактивирана за вашия профил.
+  twofa_mail_body_backup_codes_generated: Генерирани са нови резервни кодове за двуфакторна автентикация.
+  twofa_mail_body_backup_code_used: Беше използван резервен код за двуфакторна автентикация.
+  twofa_invalid_code: Кодът е невалиден или остарял.
+  twofa_label_enter_otp: Моля въведете вашия двуфакторен код за автентикация..
+  twofa_too_many_tries: Твърде много опити.
+  twofa_resend_code: Повторно изпращане на кода
+  twofa_code_sent: Код за автентикация ви беше изпратен.
+  twofa_generate_backup_codes: Генериране на резервни кодове
+  twofa_text_generate_backup_codes_confirmation: Това действие ще направи невалидни всички съществуващи резервни кодове
+    и ще генерира нови. Желаете ли да продължите?
+  twofa_notice_backup_codes_generated: Вашите резервни кодове са генерирани.
+  twofa_warning_backup_codes_generated_invalidated: Нови резервни кодове бяха генерирани.
+    Вашите досегашни кодове са невалидни от %{time}.
+  twofa_label_backup_codes: Кодове за двуфакторна автентикация
+  twofa_text_backup_codes_hint: Използвайте тези кодове вместо еднократна парола, ако нямате достъп до втория фактор. Всеки код може да бъде използван само един път. Препоръчително е да разпечатите и съхраните тези кодове на сигурно място.
+  twofa_text_backup_codes_created_at: Резервни кодове генерирани на %{datetime}.
+  twofa_backup_codes_already_shown: Резервните кодове не могат да бъдат показани отново, моля <a data-method="post"
+    href="%{bc_path}">генерирайте нови резервни кодове</a>, ако е необходимо.
+  twofa_text_group_required: Този избор е ефективен само, когато глобалната двуфакторна автентикация е установена на 'по избор'.
+    Понастоящем, двуфакторната автентикация се изисква за всички потребители.
+  twofa_text_group_disabled: Този избор е ефективен само, когато глобалната двуфакторна автентикация е установена на 'по избор'.
+    Понастоящем, двуфакторната автентикация е забранена.
+  text_user_destroy_confirmation: Наистина ли желаете да изтриете този потребител и всички  позовавания (references) на него?
+    Това действие не може да бъде отменено. Често заключването на потребителя е по-добро решение от изтриването му.
+    За да потвърдите, въведете името (%{login}) по-долу.
+  text_project_destroy_enter_identifier: За да потвърдите действието, въведете идентификатора на проекта (%{identifier}) по-долу.
+  field_current_password: Current password
+  sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
+    your password before taking any administrative actions, this ensures your account
+    stays protected."

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -84,9 +84,6 @@ module IssuesHelper
     end
     s << '<div>'
     subject = h(issue.subject)
-    if issue.is_private?
-      subject = subject + ' ' + content_tag('span', l(:field_is_private), :class => 'badge badge-private private')
-    end
     s << content_tag('h3', subject)
     s << '</div>' * (ancestors.size + 1)
     s.html_safe
@@ -103,15 +100,17 @@ module IssuesHelper
       css << " idnt idnt-#{level}" if level > 0
       buttons =
         if manage_relations
-          link_to(l(:label_delete_link_to_subtask),
-                  issue_path(
-                    {:id => child.id, :issue => {:parent_issue_id => ''},
-                     :back_url => issue_path(issue.id), :no_flash => '1'}),
-                  :method => :put,
-                  :data => {:confirm => l(:text_are_you_sure)},
-                  :title => l(:label_delete_link_to_subtask),
-                  :class => 'icon-only icon-link-break'
-                  )
+          link_to(
+            l(:label_delete_link_to_subtask),
+            issue_path(
+              {:id => child.id, :issue => {:parent_issue_id => ''},
+               :back_url => issue_path(issue.id), :no_flash => '1'}
+            ),
+            :method => :put,
+            :data => {:confirm => l(:text_are_you_sure)},
+            :title => l(:label_delete_link_to_subtask),
+            :class => 'icon-only icon-link-break'
+          )
         else
           "".html_safe
         end
@@ -142,6 +141,60 @@ module IssuesHelper
     end
     s << '</table>'
     s.html_safe
+  end
+
+  # Renders descendants stats (total descendants (open - closed)) with query links
+  def render_descendants_stats(issue)
+    # Get issue descendants grouped by status type (open/closed) using a single query
+    subtasks_grouped = issue.descendants.visible.joins(:status).select(:is_closed, :id).group(:is_closed).reorder(:is_closed).count(:id)
+    # Cast keys to boolean in order to have consistent results between database types
+    subtasks_grouped.transform_keys! {|k| ActiveModel::Type::Boolean.new.cast(k)}
+
+    open_subtasks = subtasks_grouped[false].to_i
+    closed_subtasks = subtasks_grouped[true].to_i
+    render_issues_stats(open_subtasks, closed_subtasks, {:parent_id => "~#{issue.id}"})
+  end
+
+  # Renders relations stats (total relations (open - closed)) with query links
+  def render_relations_stats(issue, relations)
+    open_relations = relations.count{|r| r.other_issue(issue).closed? == false}
+    closed_relations = relations.count{|r| r.other_issue(issue).closed?}
+    render_issues_stats(open_relations, closed_relations, {:issue_id => relations.map{|r| r.other_issue(issue).id}.join(',')})
+  end
+
+  # Renders issues stats (total relations (open - closed)) with query links
+  def render_issues_stats(open_issues=0, closed_issues=0, issues_path_attr={})
+    total_issues = open_issues + closed_issues
+    return if total_issues == 0
+
+    all_block = content_tag(
+      'span',
+      link_to(total_issues, issues_path(issues_path_attr.merge({:set_filter => true, :status_id => '*'}))),
+      class: 'badge badge-issues-count'
+    )
+    closed_block = content_tag(
+      'span',
+      link_to_if(
+        closed_issues > 0,
+        l(:label_x_closed_issues_abbr, count: closed_issues),
+        issues_path(issues_path_attr.merge({:set_filter => true, :status_id => 'c'}))
+      ),
+      class: 'closed'
+    )
+    open_block = content_tag(
+      'span',
+      link_to_if(
+        open_issues > 0,
+        l(:label_x_open_issues_abbr, :count => open_issues),
+        issues_path(issues_path_attr.merge({:set_filter => true, :status_id => 'o'}))
+      ),
+      class: 'open'
+    )
+    content_tag(
+      'span',
+      "#{all_block} (#{open_block} &#8212; #{closed_block})".html_safe,
+      :class => 'issues-stat'
+    )
   end
 
   # Renders the list of related issues on the issue details view
@@ -219,6 +272,11 @@ module IssuesHelper
       if issue.total_spent_hours == issue.spent_hours
         link_to(l_hours_short(issue.spent_hours), path)
       else
+        # link to global time entries if cross-project subtasks are allowed
+        # in order to show time entries from not descendents projects
+        if %w(system tree hierarchy).include?(Setting.cross_project_subtasks)
+          path = time_entries_path(:issue_id => "~#{issue.id}")
+        end
         s = issue.spent_hours > 0 ? l_hours_short(issue.spent_hours) : ""
         s += " (#{l(:label_total)}: #{link_to l_hours_short(issue.total_spent_hours), path})"
         s.html_safe
@@ -236,11 +294,17 @@ module IssuesHelper
 
   # Returns a link for adding a new subtask to the given issue
   def link_to_new_subtask(issue)
+    link_to(l(:button_add), url_for_new_subtask(issue))
+  end
+
+  def url_for_new_subtask(issue)
     attrs = {
       :parent_issue_id => issue
     }
     attrs[:tracker_id] = issue.tracker unless issue.tracker.disabled_core_fields.include?('parent_issue_id')
-    link_to(l(:button_add), new_project_issue_path(issue.project, :issue => attrs, :back_url => issue_path(issue)))
+    params = {:issue => attrs}
+    params[:back_url] = issue_path(issue) if controller_name == 'issues' && action_name == 'show'
+    new_project_issue_path(issue.project, params)
   end
 
   def trackers_options_for_select(issue)
@@ -483,6 +547,12 @@ module IssuesHelper
         value = "##{detail.value}" unless detail.value.blank?
         old_value = "##{detail.old_value}" unless detail.old_value.blank?
 
+      when 'child_id'
+        label = l(:label_subtask)
+        value = "##{detail.value}" unless detail.value.blank?
+        old_value = "##{detail.old_value}" unless detail.old_value.blank?
+        multiple = true
+
       when 'is_private'
         value = l(detail.value == "0" ? :general_text_No : :general_text_Yes) unless detail.value.blank?
         old_value = l(detail.old_value == "0" ? :general_text_No : :general_text_Yes) unless detail.old_value.blank?
@@ -586,6 +656,7 @@ module IssuesHelper
   end
 
   # Find the name of an associated record stored in the field attribute
+  # For project, return the associated record only if is visible for the current User
   def find_name_by_reflection(field, id)
     return nil if id.blank?
 
@@ -594,7 +665,7 @@ module IssuesHelper
       name = nil
       if association
         record = association.klass.find_by_id(key.last)
-        if record
+        if (record && !record.is_a?(Project)) || (record.is_a?(Project) && record.visible?)
           name = record.name.force_encoding('UTF-8')
         end
       end
@@ -624,13 +695,55 @@ module IssuesHelper
     if @journals.present?
       journals_without_notes = @journals.select{|value| value.notes.blank?}
       journals_with_notes = @journals.reject{|value| value.notes.blank?}
-
-      tabs << {:name => 'history', :label => :label_history, :onclick => 'showIssueHistory("history", this.href)', :partial => 'issues/tabs/history', :locals => {:issue => @issue, :journals => @journals}}
-      tabs << {:name => 'notes', :label => :label_issue_history_notes, :onclick => 'showIssueHistory("notes", this.href)'} if journals_with_notes.any?
-      tabs << {:name => 'properties', :label => :label_issue_history_properties, :onclick => 'showIssueHistory("properties", this.href)'} if journals_without_notes.any?
+      tabs <<
+        {
+          :name => 'history',
+          :label => :label_history,
+          :onclick => 'showIssueHistory("history", this.href)',
+          :partial => 'issues/tabs/history',
+          :locals => {:issue => @issue, :journals => @journals}
+        }
+      if journals_with_notes.any?
+        tabs <<
+          {
+            :name => 'notes',
+            :label => :label_issue_history_notes,
+            :onclick => 'showIssueHistory("notes", this.href)'
+          }
+      end
+      if journals_without_notes.any?
+        tabs <<
+          {
+            :name => 'properties',
+            :label => :label_issue_history_properties,
+            :onclick => 'showIssueHistory("properties", this.href)'
+          }
+      end
     end
-    tabs << {:name => 'time_entries', :label => :label_time_entry_plural, :remote => true, :onclick => "getRemoteTab('time_entries', '#{tab_issue_path(@issue, :name => 'time_entries')}', '#{issue_path(@issue, :tab => 'time_entries')}')"} if User.current.allowed_to?(:view_time_entries, @project) && @issue.spent_hours > 0
-    tabs << {:name => 'changesets', :label => :label_associated_revisions, :remote => true, :onclick => "getRemoteTab('changesets', '#{tab_issue_path(@issue, :name => 'changesets')}', '#{issue_path(@issue, :tab => 'changesets')}')"} if @has_changesets
+    if User.current.allowed_to?(:view_time_entries, @project) && @issue.spent_hours > 0
+      tabs <<
+        {
+          :name => 'time_entries',
+          :label => :label_time_entry_plural,
+          :remote => true,
+          :onclick =>
+            "getRemoteTab('time_entries', " \
+            "'#{tab_issue_path(@issue, :name => 'time_entries')}', " \
+            "'#{issue_path(@issue, :tab => 'time_entries')}')"
+        }
+    end
+    if @has_changesets
+      tabs <<
+        {
+          :name => 'changesets',
+          :label => :label_associated_revisions,
+          :remote => true,
+          :onclick =>
+            "getRemoteTab('changesets', " \
+            "'#{tab_issue_path(@issue, :name => 'changesets')}', " \
+            "'#{issue_path(@issue, :tab => 'changesets')}')"
+        }
+    end
     tabs
   end
 
@@ -650,4 +763,13 @@ module IssuesHelper
     end
   end
 
+  def projects_for_select(issue)
+    if issue.parent_issue_id.present?
+      issue.allowed_target_projects_for_subtask(User.current)
+    elsif @project && issue.new_record? && !issue.copy?
+      issue.allowed_target_projects(User.current, 'tree')
+    else
+      issue.allowed_target_projects(User.current)
+    end
+  end
 end

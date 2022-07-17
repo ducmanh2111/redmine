@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class ProjectQuery < Query
+  attr_accessor :admin_projects
+
   self.queried_class = Project
   self.view_permission = :search_project
 
@@ -37,25 +39,36 @@ class ProjectQuery < Query
     QueryColumn.new(:created_on, :sortable => "#{Project.table_name}.created_on", :default_order => 'desc')
   ]
 
+  def self.default(project: nil, user: User.current)
+    query = nil
+    if user&.logged? && (query_id = user.pref.default_project_query).present?
+      query = find_by(id: query_id)
+    end
+    if query.nil? && (query_id = Setting.default_project_query).present?
+      query = find_by(id: query_id)
+    end
+    query
+  end
+
   def initialize(attributes=nil, *args)
     super attributes
-    self.filters ||= { 'status' => {:operator => "=", :values => ['1']} }
+    self.filters ||= {'status' => {:operator => "=", :values => ['1']}}
   end
 
   def initialize_available_filters
     add_available_filter(
       "status",
-      :type => :list, :values => lambda { project_statuses_values }
+      :type => :list, :values => lambda {project_statuses_values}
     )
     add_available_filter(
       "id",
-      :type => :list, :values => lambda { project_values }, :label => :field_project
+      :type => :list, :values => lambda {project_values}, :label => :field_project
     )
     add_available_filter "name", :type => :text
     add_available_filter "description", :type => :text
     add_available_filter(
       "parent_id",
-      :type => :list_subprojects, :values => lambda { project_values }, :label => :field_parent
+      :type => :list_subprojects, :values => lambda {project_values}, :label => :field_parent
     )
     add_available_filter(
       "is_public",
@@ -66,16 +79,44 @@ class ProjectQuery < Query
     add_custom_fields_filters(project_custom_fields)
   end
 
+  def build_from_params(params, defaults={})
+    query = super
+    query.admin_projects = params[:admin_projects]
+    query
+  end
+
   def available_columns
     return @available_columns if @available_columns
+
     @available_columns = self.class.available_columns.dup
     @available_columns += project_custom_fields.visible.
-                            map {|cf| QueryCustomFieldColumn.new(cf) }
+                            map {|cf| QueryCustomFieldColumn.new(cf)}
     @available_columns
   end
 
   def available_display_types
-    ['board', 'list']
+    if self.admin_projects
+      ['list']
+    else
+      ['board', 'list']
+    end
+  end
+
+  def display_type
+    if self.admin_projects
+      'list'
+    else
+      super
+    end
+  end
+
+  def project_statuses_values
+    values = super
+    if self.admin_projects
+      values << [l(:project_status_archived), Project::STATUS_ARCHIVED.to_s]
+      values << [l(:project_status_scheduled_for_deletion), Project::STATUS_SCHEDULED_FOR_DELETION.to_s]
+    end
+    values
   end
 
   def default_columns_names
@@ -91,7 +132,11 @@ class ProjectQuery < Query
   end
 
   def base_scope
-    Project.visible.where(statement)
+    if self.admin_projects
+      Project.where(statement)
+    else
+      Project.visible.where(statement)
+    end
   end
 
   def results_scope(options={})

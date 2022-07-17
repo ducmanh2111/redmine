@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -40,9 +40,14 @@ module Redmine
       def postgresql_unaccent?
         if postgresql?
           return @postgresql_unaccent unless @postgresql_unaccent.nil?
+
           begin
-            sql = "SELECT name FROM pg_available_extensions WHERE installed_version IS NOT NULL and name = 'unaccent'"
-            @postgresql_unaccent = postgresql_version >= 90000 && ActiveRecord::Base.connection.select_value(sql).present?
+            sql =
+              "SELECT name FROM pg_available_extensions " \
+                "WHERE installed_version IS NOT NULL and name = 'unaccent'"
+            @postgresql_unaccent =
+              postgresql_version >= 90000 &&
+                ActiveRecord::Base.connection.select_value(sql).present?
           rescue
             false
           end
@@ -66,8 +71,10 @@ module Redmine
           else
             "#{left} #{neg}ILIKE #{right}"
           end
-        else
+        elsif mysql?
           "#{left} #{neg}LIKE #{right}"
+        else
+          "#{left} #{neg}LIKE #{right} ESCAPE '\\'"
         end
       end
 

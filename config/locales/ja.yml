@@ -38,14 +38,14 @@ ja:
     distance_in_words:
       half_a_minute: "30秒前後"
       less_than_x_seconds:
-        one:   "1秒以内"
-        other: "%{count}秒以内"
+        one:   "1秒未満"
+        other: "%{count}秒未満"
       x_seconds:
         one:   "1秒"
         other: "%{count}秒"
       less_than_x_minutes:
-        one:   "1分以内"
-        other: "%{count}分以内"
+        one:   "1分未満"
+        other: "%{count}分未満"
       x_minutes:
         one:   "1分"
         other: "%{count}分"
@@ -274,7 +274,7 @@ ja:
   field_priority: 優先度
   field_fixed_version: 対象バージョン
   field_user: ユーザー
-  field_principal: 主体
+  field_principal: ユーザーまたはグループ
   field_role: ロール
   field_homepage: ホームページ
   field_is_public: 公開
@@ -289,6 +289,7 @@ ja:
   field_password: パスワード
   field_new_password: 新しいパスワード
   field_password_confirmation: パスワードの確認
+  field_twofa_scheme: 二要素認証方式
   field_version: バージョン
   field_type: タイプ
   field_host: ホスト
@@ -327,7 +328,6 @@ ja:
   field_parent_title: 親ページ
   field_editable: 編集可能
   field_watcher: ウォッチャー
-  field_identity_url: OpenID URL
   field_content: 内容
   field_group_by: グループ条件
   field_sharing: 共有
@@ -352,7 +352,6 @@ ja:
   setting_attachment_max_size: 添付ファイルサイズの上限
   setting_issues_export_limit: エクスポートするチケット数の上限
   setting_mail_from: 送信元メールアドレス
-  setting_bcc_recipients: 宛先を非表示(bcc)
   setting_plain_text_mail: プレインテキスト形式(HTMLなし)
   setting_host_name: ホスト名とパス
   setting_text_formatting: テキスト書式
@@ -387,7 +386,6 @@ ja:
   setting_diff_max_lines_displayed: 差分の表示行数の上限
   setting_file_max_size_displayed: 画面表示するテキストファイルサイズの上限
   setting_repository_log_display_limit: ファイルのリビジョン表示数の上限
-  setting_openid: OpenIDによるログインと登録
   setting_password_min_length: パスワードの最低必要文字数
   setting_new_project_user_role_id: システム管理者以外のユーザーが作成したプロジェクトに設定するロール
   setting_default_projects_modules: 新規プロジェクトにおいてデフォルトで有効になるモジュール
@@ -518,7 +516,6 @@ ja:
   label_information: 情報
   label_information_plural: 情報
   label_register: 登録する
-  label_login_with_open_id_option: またはOpenIDでログインする
   label_password_lost: パスワードの再設定
   label_home: ホーム
   label_my_page: マイページ
@@ -757,6 +754,7 @@ ja:
   label_changeset_plural: 更新履歴
   label_default_columns: デフォルトの項目
   label_no_change_option: (変更無し)
+  label_bulk_edit: 一括編集
   label_bulk_edit_selected_issues: チケットの一括編集
   label_theme: テーマ
   label_default: デフォルト
@@ -867,6 +865,9 @@ ja:
   button_configure: 設定
   button_quote: 引用
   button_show: 表示
+  button_save_object: "%{object_name}を保存"
+  button_edit_object: "%{object_name}を編集"
+  button_delete_object: "%{object_name}を削除"
 
   status_active: 有効
   status_registered: 登録
@@ -880,7 +881,6 @@ ja:
 
   text_select_mail_notifications: メール通知の送信対象とする操作を選択してください。
   text_regexp_info: 例) ^[A-Z0-9]+$
-  text_min_max_length_info: 0だと無制限になります
   text_project_destroy_confirmation: 本当にこのプロジェクトと関連データを削除しますか？
   text_subprojects_destroy_warning: "サブプロジェクト %{value} も削除されます。"
   text_workflow_edit: ワークフローを編集するロールとトラッカーを選んでください
@@ -1162,7 +1162,7 @@ ja:
   notice_import_finished: "%{count}件のデータをすべてインポートしました"
   notice_import_finished_with_errors: "全%{total}件中%{count}件のデータがインポートできませんでした"
   error_invalid_file_encoding: このファイルのエンコーディングは正しい%{encoding}ではありません
-  error_invalid_csv_file_or_settings: このファイルはCSVファイルではないか、以下の設定と一致していません
+  error_invalid_csv_file_or_settings: このファイルはCSVファイルではないか、以下の設定と一致していません (%{value})
   error_can_not_read_import_file: インポート元のファイルを読み込み中にエラーが発生しました
   permission_import_issues: チケットのインポート
   label_import_issues: チケットのインポート
@@ -1368,3 +1368,60 @@ ja:
   error_invalid_size_parameter: sizeパラメータが無効です
   error_attachment_not_found: 添付ファイル %{name} が見つかりません
   permission_delete_project: プロジェクトの削除
+  text_user_destroy_confirmation: 本当にこのユーザーとこのユーザーへのすべての参照を削除しますか? 削除後は元に戻せません。通常は削除よりロックのほうが適切です。削除する場合は確認のためログインID (%{login}) を入力してください。
+  text_project_destroy_enter_identifier: 確認のためプロジェクト識別子 (%{identifier}) を入力してください。
+  button_add_subtask: 子チケットを追加
+  notice_invalid_watcher: '無効なウォッチャー: このオブジェクトを表示できないユーザーですので通知は行われません。'
+  button_fetch_changesets: コミットを取得
+  permission_view_message_watchers: メッセージのウォッチャー一覧の閲覧
+  permission_add_message_watchers: メッセージのウォッチャーの追加
+  permission_delete_message_watchers: メッセージのウォッチャーの削除
+  label_message_watchers: ウォッチャー
+  button_copy_link: リンクをコピー
+  error_invalid_authenticity_token: Invalid form authenticity token.
+  error_query_statement_invalid: An error occurred while executing the query and has
+    been logged. Please report this error to your Redmine administrator.
+  permission_view_wiki_page_watchers: Wikiページのウォッチャー一覧の閲覧
+  permission_add_wiki_page_watchers: Wikiページのウォッチャーの追加
+  permission_delete_wiki_page_watchers: Wikiページのウォッチャーの削除
+  label_wiki_page_watchers: ウォッチャー
+  label_attachment_description: ファイルの説明
+  error_no_data_in_file: ファイルにデータが含まれていません
+  field_twofa_required: 二要素認証必須
+  twofa_hint_optional_html: <strong>%{label}</strong> に設定するとユーザーは必要に応じて二要素認証を有効化できます (所属するいずれかのグループで二要素認証必須に設定されている場合を除く)。
+  twofa_text_group_required: この設定は二要素認証 (管理→設定→認証) が '任意' に設定されている場合のみ利用できます。現在は二要素認証はすべてのユーザーに対して必須に設定されています。
+  twofa_text_group_disabled: この設定は二要素認証 (管理→設定→認証) が '任意' に設定されている場合のみ利用できます。現在は二要素認証は無効です。
+  field_default_issue_query: デフォルトのクエリ
+  label_default_queries:
+    for_all_projects: 全プロジェクト向け
+    for_current_project: 現在のプロジェクト
+    for_all_users: 全ユーザー向け
+  text_allowed_queries_to_select: 公開クエリ (すべてのユーザーが表示できるクエリ) のみ選択できます
+  text_all_migrations_have_been_run: すべてのデータベースマイグレーションが実行済
+  text_setting_config_change: 動作はconfig/configuration.ymlで設定できます。設定後、Redmineを再起動してください。
+  button_create_and_follow: 作成後表示
+  label_subtask: 子チケット
+  label_default_query: デフォルトのクエリ
+  field_default_project_query: デフォルトのプロジェクトクエリ
+  label_required_administrators: システム管理者のみ必須
+  twofa_hint_required_administrators_html: <strong>%{label}</strong> に設定するとシステム管理者であるユーザーに対し二要素認証の有効化を次回ログイン時に要求します。そのほかのユーザーに対しては 任意 に設定した場合と同じ動作です。
+  label_auto_watch_on: オートウォッチ
+  label_auto_watch_on_issue_contributed_to: 自分が更新したチケット
+  text_project_close_confirmation: 本当にプロジェクト '%{value}' を終了して読み取り専用にしますか?
+  text_project_reopen_confirmation: 本当にプロジェクト '%{value}' を再開しますか?
+  text_project_archive_confirmation: 本当にプロジェクト '%{value}' をアーカイブしますか?
+  mail_destroy_project_failed: プロジェクト %{value} は削除できませんでした。
+  mail_destroy_project_successful: プロジェクト %{value} を削除しました。
+  mail_destroy_project_with_subprojects_successful: Project %{value} とサブプロジェクトを削除しました。
+  project_status_scheduled_for_deletion: 削除処理待ち
+  text_projects_bulk_destroy_confirmation: 本当に選択したプロジェクトと関連データを削除しますか？
+  text_projects_bulk_destroy_head: |
+    以下のプロジェクト（それらのサブプロジェクトと関連データも含む）を恒久的に削除しようとしています。
+    以下の情報を確認し、本当にこの操作を行うのか確認してください。
+    この操作は元に戻せません。
+  text_projects_bulk_destroy_confirm: 削除する場合は確認のため "%{yes}" と入力してください。
+  text_subprojects_bulk_destroy: '次のサブプロジェクトを含む: %{value}'
+  field_current_password: Current password
+  sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
+    your password before taking any administrative actions, this ensures your account
+    stays protected."

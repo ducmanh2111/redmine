@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -44,22 +44,38 @@ module ApplicationHelper
   # @param [optional, Hash] html_options Options passed to link_to
   # @param [optional, Hash] parameters_for_method_reference Extra parameters for link_to
   def link_to_if_authorized(name, options = {}, html_options = nil, *parameters_for_method_reference)
-    link_to(name, options, html_options, *parameters_for_method_reference) if authorize_for(options[:controller] || params[:controller], options[:action])
+    if authorize_for(options[:controller] || params[:controller], options[:action])
+      link_to(name, options, html_options, *parameters_for_method_reference)
+    end
   end
 
   # Displays a link to user's account page if active
   def link_to_user(user, options={})
-    if user.is_a?(User)
-      name = h(user.name(options[:format]))
-      if user.active? || (User.current.admin? && user.logged?)
-        only_path = options[:only_path].nil? ? true : options[:only_path]
-        link_to name, user_url(user, :only_path => only_path), :class => user.css_classes
-      else
-        name
+    user.is_a?(User) ? link_to_principal(user, options) : h(user.to_s)
+  end
+
+  # Displays a link to user's account page or group page
+  def link_to_principal(principal, options={})
+    only_path = options[:only_path].nil? ? true : options[:only_path]
+    case principal
+    when User
+      name = h(principal.name(options[:format]))
+      name = "@" + name if options[:mention]
+      css_classes = ''
+      if principal.active? || (User.current.admin? && principal.logged?)
+        url = user_url(principal, :only_path => only_path)
+        css_classes += principal.css_classes
       end
+    when Group
+      name = h(principal.to_s)
+      url = group_url(principal, :only_path => only_path)
+      css_classes = principal.css_classes
     else
-      h(user.to_s)
+      name = h(principal.to_s)
     end
+
+    css_classes += " #{options[:class]}" if css_classes && options[:class].present?
+    url ? link_to(name, url, :class => css_classes) : name
   end
 
   # Displays a link to edit group page if current user is admin
@@ -194,16 +210,22 @@ module ApplicationHelper
   end
 
   RECORD_LINK = {
-    'CustomValue'  => ->(custom_value) {link_to_record(custom_value.customized)},
-    'Document'     => ->(document)     {link_to(document.title, document_path(document))},
-    'Group'        => ->(group)        {link_to(group.name, group_path(group))},
-    'Issue'        => ->(issue)        {link_to_issue(issue, :subject => false)},
-    'Message'      => ->(message)      {link_to_message(message)},
-    'News'         => ->(news)         {link_to(news.title, news_path(news))},
-    'Project'      => ->(project)      {link_to_project(project)},
-    'User'         => ->(user)         {link_to_user(user)},
-    'Version'      => ->(version)      {link_to_version(version)},
-    'WikiPage'     => ->(wiki_page)    {link_to(wiki_page.pretty_title, project_wiki_page_path(wiki_page.project, wiki_page.title))}
+    'CustomValue' => lambda {|custom_value| link_to_record(custom_value.customized)},
+    'Document'    => lambda {|document| link_to(document.title, document_path(document))},
+    'Group'       => lambda {|group|    link_to(group.name, group_path(group))},
+    'Issue'       => lambda {|issue|    link_to_issue(issue, :subject => false)},
+    'Message'     => lambda {|message|  link_to_message(message)},
+    'News'        => lambda {|news|     link_to(news.title, news_path(news))},
+    'Project'     => lambda {|project|  link_to_project(project)},
+    'User'        => lambda {|user|     link_to_user(user)},
+    'Version'     => lambda {|version|  link_to_version(version)},
+    'WikiPage'    =>
+      lambda do |wiki_page|
+        link_to(
+          wiki_page.pretty_title,
+          project_wiki_page_path(wiki_page.project, wiki_page.title)
+        )
+      end
   }
 
   def link_to_record(record)
@@ -215,8 +237,10 @@ module ApplicationHelper
   ATTACHMENT_CONTAINER_LINK = {
     # Custom list, since project/version attachments are listed in the files
     # view and not in the project/milestone view
-    'Project'      => ->(project)      {link_to(l(:project_module_files), project_files_path(project))},
-    'Version'      => ->(version)      {link_to(l(:project_module_files), project_files_path(version.project))},
+    'Project' =>
+       lambda {|project| link_to(l(:project_module_files), project_files_path(project))},
+    'Version' =>
+       lambda {|version| link_to(l(:project_module_files), project_files_path(version.project))},
   }
 
   def link_to_attachment_container(attachment_container)
@@ -243,8 +267,8 @@ module ApplicationHelper
       object.to_s
     when 'Float'
       sprintf "%.2f", object
-    when 'User'
-      html ? link_to_user(object) : object.to_s
+    when 'User', 'Group'
+      html ? link_to_principal(object) : object.to_s
     when 'Project'
       html ? link_to_project(object) : object.to_s
     when 'Version'
@@ -271,6 +295,8 @@ module ApplicationHelper
         object.filename
       end
     when 'CustomValue', 'CustomFieldValue'
+      return "" unless object.customized&.visible?
+
       if object.custom_field
         f = object.custom_field.format.formatted_custom_value(self, object, html)
         if f.nil? || f.is_a?(String)
@@ -287,7 +313,8 @@ module ApplicationHelper
   end
 
   def wiki_page_path(page, options={})
-    url_for({:controller => 'wiki', :action => 'show', :project_id => page.project, :id => page.title}.merge(options))
+    url_for({:controller => 'wiki', :action => 'show', :project_id => page.project,
+             :id => page.title}.merge(options))
   end
 
   def thumbnail_tag(attachment)
@@ -296,7 +323,8 @@ module ApplicationHelper
       image_tag(
         thumbnail_path(attachment),
         :srcset => "#{thumbnail_path(attachment, :size => thumbnail_size * 2)} 2x",
-        :style => "max-width: #{thumbnail_size}px; max-height: #{thumbnail_size}px;"
+        :style => "max-width: #{thumbnail_size}px; max-height: #{thumbnail_size}px;",
+        :loading => "lazy"
       ),
       attachment_path(
         attachment
@@ -399,7 +427,7 @@ module ApplicationHelper
         # set the project environment to please macros.
         @project = project
         if ancestors.empty? || project.is_descendant_of?(ancestors.last)
-          s << "<ul class='projects #{ ancestors.empty? ? 'root' : nil}'>\n"
+          s << "<ul class='projects #{ancestors.empty? ? 'root' : nil}'>\n"
         else
           ancestors.pop
           s << "</li>"
@@ -409,6 +437,7 @@ module ApplicationHelper
           end
         end
         classes = (ancestors.empty? ? 'root' : 'child')
+        classes += ' archived' if project.archived?
         s << "<li class='#{classes}'><div class='#{classes}'>"
         s << h(block_given? ? capture(project, &block) : project.name)
         s << "</div>\n"
@@ -511,7 +540,7 @@ module ApplicationHelper
     end
     jump = params[:jump].presence || current_menu_item
     s = (+'').html_safe
-    build_project_link = ->(project, level = 0) do
+    build_project_link = lambda do |project, level = 0|
       padding = level * 16
       text = content_tag('span', project.name, :style => "padding-left:#{padding}px;")
       s << link_to(text, project_path(project, :jump => jump),
@@ -573,7 +602,8 @@ module ApplicationHelper
     project_tree(projects) do |project, level|
       name_prefix = (level > 0 ? '&nbsp;' * 2 * level + '&#187; ' : '').html_safe
       tag_options = {:value => project.id}
-      if project == options[:selected] || (options[:selected].respond_to?(:include?) && options[:selected].include?(project))
+      if project == options[:selected] || (options[:selected].respond_to?(:include?) &&
+           options[:selected].include?(project))
         tag_options[:selected] = 'selected'
       else
         tag_options[:selected] = nil
@@ -594,10 +624,17 @@ module ApplicationHelper
   def principals_check_box_tags(name, principals)
     s = +''
     principals.each do |principal|
-      s << content_tag('label',
-                       check_box_tag(name, principal.id, false, :id => nil) +
-                       (avatar(principal, :size => 16).presence || content_tag('span', nil, :class => "name icon icon-#{principal.class.name.downcase}")) +
-                       principal)
+      s <<
+        content_tag(
+          'label',
+          check_box_tag(name, principal.id, false, :id => nil) +
+            (avatar(principal, :size => 16).presence ||
+               content_tag(
+                 'span', nil,
+                 :class => "name icon icon-#{principal.class.name.downcase}"
+               )
+            ) + principal
+        )
     end
     s.html_safe
   end
@@ -610,8 +647,11 @@ module ApplicationHelper
     end
     groups = +''
     collection.sort.each do |element|
-      selected_attribute = ' selected="selected"' if option_value_selected?(element, selected) || element.id.to_s == selected
-      (element.is_a?(Group) ? groups : s) << %(<option value="#{element.id}"#{selected_attribute}>#{h element.name}</option>)
+      if option_value_selected?(element, selected) || element.id.to_s == selected
+        selected_attribute = ' selected="selected"'
+      end
+      (element.is_a?(Group) ? groups : s) <<
+        %(<option value="#{element.id}"#{selected_attribute}>#{h element.name}</option>)
     end
     unless groups.empty?
       s << %(<optgroup label="#{h(l(:label_group_plural))}">#{groups}</optgroup>)
@@ -642,7 +682,10 @@ module ApplicationHelper
   end
 
   def html_hours(text)
-    text.gsub(%r{(\d+)([\.:])(\d+)}, '<span class="hours hours-int">\1</span><span class="hours hours-dec">\2\3</span>').html_safe
+    text.gsub(
+      %r{(\d+)([\.:])(\d+)},
+      '<span class="hours hours-int">\1</span><span class="hours hours-dec">\2\3</span>'
+    ).html_safe
   end
 
   def authoring(created, author, options={})
@@ -652,7 +695,9 @@ module ApplicationHelper
   def time_tag(time)
     text = distance_of_time_in_words(Time.now, time)
     if @project
-      link_to(text, project_activity_path(@project, :from => User.current.time_to_date(time)), :title => format_time(time))
+      link_to(text,
+              project_activity_path(@project, :from => User.current.time_to_date(time)),
+              :title => format_time(time))
     else
       content_tag('abbr', text, :title => format_time(time))
     end
@@ -736,7 +781,7 @@ module ApplicationHelper
 
   # Sets the html title
   # Returns the html title when called without arguments
-  # Current project name and app_title and automatically appended
+  # Current project name and app_title are automatically appended
   # Exemples:
   #   html_title 'Foo', 'Bar'
   #   html_title # => 'Foo - Bar - My Project - Redmine'
@@ -755,7 +800,9 @@ module ApplicationHelper
   def actions_dropdown(&block)
     content = capture(&block)
     if content.present?
-      trigger = content_tag('span', l(:button_actions), :class => 'icon-only icon-actions', :title => l(:button_actions))
+      trigger =
+        content_tag('span', l(:button_actions), :class => 'icon-only icon-actions',
+                    :title => l(:button_actions))
       trigger = content_tag('span', trigger, :class => 'drdn-trigger')
       content = content_tag('div', content, :class => 'drdn-items')
       content = content_tag('div', content, :class => 'drdn-content')
@@ -888,7 +935,11 @@ module ApplicationHelper
 
     # when using an image link, try to use an attachment, if possible
     attachments = options[:attachments] || []
-    attachments += obj.attachments if obj.respond_to?(:attachments)
+    if obj.is_a?(Journal)
+      attachments += obj.journalized.attachments if obj.journalized.respond_to?(:attachments)
+    else
+      attachments += obj.attachments if obj.respond_to?(:attachments)
+    end
     if attachments.present?
       text.gsub!(/src="([^\/"]+\.(bmp|gif|jpg|jpe|jpeg|png))"(\s+alt="([^"]*)")?/i) do |m|
         filename, ext, alt, alttext = $1, $2, $3, $4
@@ -899,7 +950,7 @@ module ApplicationHelper
           if !desc.blank? && alttext.blank?
             alt = " title=\"#{desc}\" alt=\"#{desc}\""
           end
-          "src=\"#{image_url}\"#{alt}"
+          "src=\"#{image_url}\"#{alt} loading=\"lazy\""
         else
           m
         end
@@ -946,7 +997,7 @@ module ApplicationHelper
           wiki_page = link_project.wiki.find_page(page)
           url =
             if anchor.present? && wiki_page.present? &&
-                 (obj.is_a?(WikiContent) || obj.is_a?(WikiContent::Version)) &&
+                 (obj.is_a?(WikiContent) || obj.is_a?(WikiContentVersion)) &&
                  obj.page == wiki_page
               "##{anchor}"
             else
@@ -958,14 +1009,21 @@ module ApplicationHelper
                 "##{page.present? ? Wiki.titleize(page) : title}" + (anchor.present? ? "_#{anchor}" : '')
               else
                 wiki_page_id = page.present? ? Wiki.titleize(page) : nil
-                parent = wiki_page.nil? && obj.is_a?(WikiContent) && obj.page && project == link_project ? obj.page.title : nil
+                parent =
+                  if wiki_page.nil? && obj.is_a?(WikiContent) &&
+                       obj.page && project == link_project
+                    obj.page.title
+                  else
+                    nil
+                  end
                 url_for(:only_path => only_path, :controller => 'wiki',
                         :action => 'show', :project_id => link_project,
                         :id => wiki_page_id, :version => nil, :anchor => anchor,
                         :parent => parent)
               end
             end
-          link_to(title.present? ? title.html_safe : h(page), url, :class => ('wiki-page' + (wiki_page ? '' : ' new')))
+          link_to(title.present? ? title.html_safe : h(page),
+                  url, :class => ('wiki-page' + (wiki_page ? '' : ' new')))
         else
           # project or wiki doesn't exist
           all
@@ -1094,7 +1152,9 @@ module ApplicationHelper
               end
             when 'document'
               if document = Document.visible.find_by_id(oid)
-                link = link_to(document.title, document_url(document, :only_path => only_path), :class => 'document')
+                link = link_to(document.title,
+                               document_url(document, :only_path => only_path),
+                               :class => 'document')
               end
             when 'version'
               if version = Version.visible.find_by_id(oid)
@@ -1106,7 +1166,9 @@ module ApplicationHelper
               end
             when 'forum'
               if board = Board.visible.find_by_id(oid)
-                link = link_to(board.name, project_board_url(board.project, board, :only_path => only_path), :class => 'board')
+                link = link_to(board.name,
+                               project_board_url(board.project, board, :only_path => only_path),
+                               :class => 'board')
               end
             when 'news'
               if news = News.visible.find_by_id(oid)
@@ -1125,7 +1187,9 @@ module ApplicationHelper
             case prefix
             when 'document'
               if project && document = project.documents.visible.find_by_title(name)
-                link = link_to(document.title, document_url(document, :only_path => only_path), :class => 'document')
+                link = link_to(document.title,
+                               document_url(document, :only_path => only_path),
+                               :class => 'document')
               end
             when 'version'
               if project && version = project.versions.visible.find_by_name(name)
@@ -1133,7 +1197,9 @@ module ApplicationHelper
               end
             when 'forum'
               if project && board = project.boards.visible.find_by_name(name)
-                link = link_to(board.name, project_board_url(board.project, board, :only_path => only_path), :class => 'board')
+                link = link_to(board.name,
+                               project_board_url(board.project, board, :only_path => only_path),
+                               :class => 'board')
               end
             when 'news'
               if project && news = project.news.visible.find_by_title(name)
@@ -1187,7 +1253,11 @@ module ApplicationHelper
               end
             when 'attachment'
               attachments = options[:attachments] || []
-              attachments += obj.attachments if obj.respond_to?(:attachments)
+              if obj.is_a?(Journal)
+                attachments += obj.journalized.attachments if obj.journalized.respond_to?(:attachments)
+              else
+                attachments += obj.attachments if obj.respond_to?(:attachments)
+              end
               if attachments && attachment = Attachment.latest_attach(attachments, name)
                 link = link_to_attachment(attachment, :only_path => only_path, :class => 'attachment')
               end
@@ -1202,7 +1272,7 @@ module ApplicationHelper
           elsif sep == "@"
             name = remove_double_quotes(identifier)
             u = User.visible.find_by("LOWER(login) = :s AND type = 'User'", :s => name.downcase)
-            link = link_to_user(u, :only_path => only_path) if u
+            link = link_to_user(u, :only_path => only_path, :class => 'user-mention', :mention => true) if u
           end
         end
         (leading + (link || "#{project_prefix}#{prefix}#{repo_prefix}#{sep}#{identifier}#{comment_suffix}"))
@@ -1238,7 +1308,7 @@ module ApplicationHelper
               )|
               (
               (?<sep4>@)
-              (?<identifier3>[A-Za-z0-9_\-@\.]*)
+              (?<identifier3>[A-Za-z0-9_\-@\.]*?)
               )
             )
             (?=
@@ -1284,33 +1354,40 @@ module ApplicationHelper
       item = strip_tags(content).strip
       anchor = sanitize_anchor_name(item)
       # used for single-file wiki export
-      anchor = "#{obj.page.title}_#{anchor}" if options[:wiki_links] == :anchor && (obj.is_a?(WikiContent) || obj.is_a?(WikiContent::Version))
+      if options[:wiki_links] == :anchor && (obj.is_a?(WikiContent) ||
+           obj.is_a?(WikiContentVersion))
+        anchor = "#{obj.page.title}_#{anchor}"
+      end
       @heading_anchors[anchor] ||= 0
       idx = (@heading_anchors[anchor] += 1)
       if idx > 1
         anchor = "#{anchor}-#{idx}"
       end
       @parsed_headings << [level, anchor, item]
-      "<a name=\"#{anchor}\"></a>\n<h#{level} #{attrs}>#{content}<a href=\"##{anchor}\" class=\"wiki-anchor\">&para;</a></h#{level}>"
+      "<a name=\"#{anchor}\"></a>\n<h#{level} #{attrs}>#{content}" \
+        "<a href=\"##{anchor}\" class=\"wiki-anchor\">&para;</a></h#{level}>"
     end
   end
 
-  MACROS_RE = /(
-                (!)?                        # escaping
-                (
-                \{\{                        # opening tag
-                ([\w]+)                     # macro name
-                (\(([^\n\r]*?)\))?          # optional arguments
-                ([\n\r].*?[\n\r])?          # optional block of text
-                \}\}                        # closing tag
-                )
-               )/mx unless const_defined?(:MACROS_RE)
-
-  MACRO_SUB_RE = /(
-                  \{\{
-                  macro\((\d+)\)
-                  \}\}
-                  )/x unless const_defined?(:MACRO_SUB_RE)
+  unless const_defined?(:MACROS_RE)
+    MACROS_RE = /(
+                  (!)?                        # escaping
+                  (
+                  \{\{                        # opening tag
+                  ([\w]+)                     # macro name
+                  (\(([^\n\r]*?)\))?          # optional arguments
+                  ([\n\r].*?[\n\r])?          # optional block of text
+                  \}\}                        # closing tag
+                  )
+                 )/mx
+  end
+  unless const_defined?(:MACRO_SUB_RE)
+    MACRO_SUB_RE = /(
+                    \{\{
+                    macro\((\d+)\)
+                    \}\}
+                    )/x
+  end
 
   # Extracts macros from text
   def catch_macros(text)
@@ -1441,14 +1518,14 @@ module ApplicationHelper
     html.html_safe
   end
 
-  def delete_link(url, options={})
+  def delete_link(url, options={}, button_name=l(:button_delete))
     options = {
       :method => :delete,
       :data => {:confirm => l(:text_are_you_sure)},
       :class => 'icon icon-del'
     }.merge(options)
 
-    link_to l(:button_delete), url, options
+    link_to button_name, url, options
   end
 
   def link_to_function(name, function, html_options={})
@@ -1545,7 +1622,9 @@ module ApplicationHelper
 
   def calendar_for(field_id)
     include_calendar_headers_tags
-    javascript_tag("$(function() { $('##{field_id}').addClass('date').datepickerFallback(datepickerOptions); });")
+    javascript_tag(
+      "$(function() { $('##{field_id}').addClass('date').datepickerFallback(datepickerOptions); });"
+    )
   end
 
   def include_calendar_headers_tags
@@ -1560,12 +1639,13 @@ module ApplicationHelper
         start_of_week = start_of_week.to_i % 7
         tags <<
           javascript_tag(
-            "var datepickerOptions={dateFormat: 'yy-mm-dd', firstDay: #{start_of_week}, " +
-                     "showOn: 'button', buttonImageOnly: true, buttonImage: '" +
-                     path_to_image('/images/calendar.png') +
-                     "', showButtonPanel: true, showWeek: true, showOtherMonths: true, " +
-                     "selectOtherMonths: true, changeMonth: true, changeYear: true, " +
-                     "beforeShow: beforeShowDatePicker};")
+            "var datepickerOptions={dateFormat: 'yy-mm-dd', firstDay: #{start_of_week}, " \
+              "showOn: 'button', buttonImageOnly: true, buttonImage: '" +
+            path_to_image('/images/calendar.png') +
+              "', showButtonPanel: true, showWeek: true, showOtherMonths: true, " \
+              "selectOtherMonths: true, changeMonth: true, changeYear: true, " \
+              "beforeShow: beforeShowDatePicker};"
+          )
         jquery_locale = l('jquery.locale', :default => current_language.to_s)
         unless jquery_locale == 'en'
           tags << javascript_include_tag("i18n/datepicker-#{jquery_locale}.js")
@@ -1647,14 +1727,19 @@ module ApplicationHelper
   # Returns the javascript tags that are included in the html layout head
   def javascript_heads
     tags = javascript_include_tag(
-      'jquery-3.5.1-ui-1.12.1-ujs-5.2.3',
+      'jquery-3.6.0-ui-1.13.1-ujs-6.1.3.1',
       'tribute-5.1.3.min',
       'tablesort-5.2.1.min.js',
       'tablesort-5.2.1.number.min.js',
       'application',
       'responsive')
     unless User.current.pref.warn_on_leaving_unsaved == '0'
-      tags << "\n".html_safe + javascript_tag("$(window).on('load', function(){ warnLeavingUnsaved('#{escape_javascript l(:text_warn_on_leaving_unsaved)}'); });")
+      warn_text = escape_javascript(l(:text_warn_on_leaving_unsaved))
+      tags <<
+        "\n".html_safe +
+          javascript_tag(
+            "$(window).on('load', function(){ warnLeavingUnsaved('#{warn_text}'); });"
+          )
     end
     tags
   end
@@ -1741,20 +1826,37 @@ module ApplicationHelper
     end
   end
 
-  def autocomplete_data_sources(project)
-    {
-      issues: auto_complete_issues_path(:project_id => project, :q => '')
-    }
-  end
-
   def heads_for_auto_complete(project)
     data_sources = autocomplete_data_sources(project)
-
     javascript_tag(
-      "rm = window.rm || {};" +
-      "rm.AutoComplete = rm.AutoComplete || {};" +
-      "rm.AutoComplete.dataSources = '#{data_sources.to_json}';"
+      "rm = window.rm || {};" \
+      "rm.AutoComplete = rm.AutoComplete || {};" \
+      "rm.AutoComplete.dataSources = JSON.parse('#{data_sources.to_json}');"
     )
+  end
+
+  def update_data_sources_for_auto_complete(data_sources)
+    javascript_tag(
+      "rm.AutoComplete.dataSources = Object.assign(rm.AutoComplete.dataSources, JSON.parse('#{data_sources.to_json}'));"
+    )
+  end
+
+  def copy_object_url_link(url)
+    link_to_function(
+      l(:button_copy_link), 'copyTextToClipboard(this);',
+      class: 'icon icon-copy-link',
+      data: {'clipboard-text' => url}
+    )
+  end
+
+  # Returns the markdown formatter: markdown or common_mark
+  # ToDo: Remove this when markdown will be removed
+  def markdown_formatter
+    if Setting.text_formatting == "common_mark"
+      "common_mark"
+    else
+      "markdown"
+    end
   end
 
   private
@@ -1769,5 +1871,12 @@ module ApplicationHelper
   def remove_double_quotes(identifier)
     name = identifier.gsub(%r{^"(.*)"$}, "\\1")
     return CGI.unescapeHTML(name)
+  end
+
+  def autocomplete_data_sources(project)
+    {
+      issues: auto_complete_issues_path(project_id: project, q: ''),
+      wiki_pages: auto_complete_wiki_pages_path(project_id: project, q: ''),
+    }
   end
 end

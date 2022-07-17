@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+require 'redmine'
 
 module Redmine
   module I18n
@@ -56,7 +58,7 @@ module Redmine
 
     def ll(lang, str, arg=nil)
       options = arg.is_a?(Hash) ? arg : {:value => arg}
-      locale = lang.to_s.gsub(%r{(.+)\-(.+)$}) { "#{$1}-#{$2.upcase}" }
+      locale = lang.to_s.gsub(%r{(.+)\-(.+)$}) {"#{$1}-#{$2.upcase}"}
       ::I18n.t(str.to_s, **options, locale: locale)
     end
 
@@ -68,6 +70,7 @@ module Redmine
 
     def format_date(date)
       return nil unless date
+
       options = {}
       options[:format] = Setting.date_format unless Setting.date_format.blank?
       ::I18n.l(date.to_date, **options)
@@ -75,6 +78,7 @@ module Redmine
 
     def format_time(time, include_date=true, user=nil)
       return nil unless time
+
       user ||= User.current
       options = {}
       options[:format] = (Setting.time_format.blank? ? :time : Setting.time_format)
@@ -89,7 +93,7 @@ module Redmine
       if Setting.timespan_format == 'minutes'
         h = hours.floor
         m = ((hours - h) * 60).round
-        "%d:%02d" % [ h, m ]
+        "%d:%02d" % [h, m]
       else
         "%.2f" % hours.to_f
       end
@@ -133,7 +137,11 @@ module Redmine
     end
 
     def find_language(lang)
-      @@languages_lookup ||= valid_languages.inject({}) {|k, v| k[v.to_s.downcase] = v; k }
+      @@languages_lookup ||=
+        valid_languages.inject({}) do |k, v|
+          k[v.to_s.downcase] = v
+          k
+        end
       @@languages_lookup[lang.to_s.downcase]
     end
 
@@ -151,14 +159,14 @@ module Redmine
     # * available_locales are determined by looking at translation file names
     class Backend < ::I18n::Backend::Simple
       module Implementation
-        include ::I18n::Backend::Pluralization
-
         # Get available locales from the translations filenames
         def available_locales
           @available_locales ||= ::I18n.load_path.map {|path| File.basename(path, '.*')}.uniq.sort.map(&:to_sym)
         end
       end
 
+      # Adds custom pluralization rules
+      include ::I18n::Backend::Pluralization
       # Adds fallback to default locale for untranslated strings
       include ::I18n::Backend::Fallbacks
     end

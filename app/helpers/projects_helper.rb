@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -114,6 +114,15 @@ module ProjectsHelper
     principals_options_for_select(assignable_users, project.default_assigned_to)
   end
 
+  def project_default_issue_query_options(project)
+    public_queries = IssueQuery.only_public
+    grouped = {
+      l('label_default_queries.for_all_projects')    => public_queries.where(project_id: nil).pluck(:name, :id),
+      l('label_default_queries.for_current_project') => public_queries.where(project: project).pluck(:name, :id)
+    }
+    grouped_options_for_select(grouped, project.default_issue_query_id)
+  end
+
   def format_version_sharing(sharing)
     sharing = 'none' unless Version::VERSION_SHARINGS.include?(sharing)
     l("label_version_sharing_#{sharing}")
@@ -134,7 +143,7 @@ module ProjectsHelper
 
   def render_api_includes(project, api)
     api.array :trackers do
-      project.trackers.each do |tracker|
+      project.rolled_up_trackers(false).visible.each do |tracker|
         api.tracker(:id => tracker.id, :name => tracker.name)
       end
     end if include_in_api_response?('trackers')
@@ -166,6 +175,7 @@ module ProjectsHelper
 
   def bookmark_link(project, user = User.current)
     return '' unless user && user.logged?
+
     @jump_box ||= Redmine::ProjectJumpBox.new user
     bookmarked = @jump_box.bookmark?(project)
     css = +"icon bookmark "

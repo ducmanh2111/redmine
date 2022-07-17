@@ -22,11 +22,11 @@
 </span>
 &nbsp;
 <% other_formats_links do |f| %>
-  <%= f.link_to_with_query_parameters 'Atom', 'from' => nil, :key => User.current.rss_key %>
+  <%= f.link_to_with_query_parameters 'Atom', 'from' => nil, :key => User.current.atom_key %>
 <% end %>
 
 <% content_for :header_tags do %>
-<%= auto_discovery_link_tag(:atom, :params => request.query_parameters.merge(:from => nil, :key => User.current.rss_key), :format => 'atom') %>
+<%= auto_discovery_link_tag(:atom, :params => request.query_parameters.merge(:from => nil, :key => User.current.atom_key), :format => 'atom') %>
 <% end %>
 
 <% content_for :sidebar do %>
@@ -35,6 +35,10 @@
 <p>
   <%= t(:label_days_to_html, :days => @days, :date => date_field_tag('from', '', :value => (@date_to - 1), :size => 10)) %>
   <%= calendar_for('from') %>
+</p>
+<p>
+  <%= l(:label_user) %>
+  <%= select_tag('user_id', activity_authors_options_for_select(@project, params[:user_id]), include_blank: true) %>
 </p>
 <ul>
 <% @activity.event_types.each do |t| %>
@@ -51,7 +55,6 @@
     <%= hidden_field_tag 'with_subprojects', 0, :id => nil %>
     <p><label><%= check_box_tag 'with_subprojects', 1, @with_subprojects %> <%=l(:label_subproject_plural)%></label></p>
 <% end %>
-<%= hidden_field_tag('user_id', params[:user_id]) unless params[:user_id].blank? %>
 <p><%= submit_tag l(:button_apply), :class => 'button-small', :name => 'submit' %></p>
 <% end %>
 <% end %>

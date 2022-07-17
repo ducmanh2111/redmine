@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -26,19 +26,23 @@ class AdminController < ApplicationController
 
   before_action :require_admin
 
+  helper :queries
+  include QueriesHelper
+  helper :projects_queries
+  helper :projects
+
   def index
     @no_configuration_data = Redmine::DefaultData::Loader::no_data?
   end
 
   def projects
-    @status = params[:status] || 1
+    retrieve_query(ProjectQuery, false, :defaults => @default_columns_names)
+    @query.admin_projects = 1
+    scope = @query.results_scope
 
-    scope = Project.status(@status).sorted
-    scope = scope.like(params[:name]) if params[:name].present?
-
-    @project_count = scope.count
-    @project_pages = Paginator.new @project_count, per_page_option, params['page']
-    @projects = scope.limit(@project_pages.per_page).offset(@project_pages.offset).to_a
+    @entry_count = scope.count
+    @entry_pages = Paginator.new @entry_count, per_page_option, params['page']
+    @projects = scope.limit(@entry_pages.per_page).offset(@entry_pages.offset).to_a
 
     render :action => "projects", :layout => false if request.xhr?
   end
@@ -76,6 +80,7 @@ class AdminController < ApplicationController
       [:text_default_administrator_account_changed, User.default_admin_account_changed?],
       [:text_file_repository_writable, File.writable?(Attachment.storage_path)],
       ["#{l :text_plugin_assets_writable} (./public/plugin_assets)",   File.writable?(Redmine::Plugin.public_directory)],
+      [:text_all_migrations_have_been_run, !ActiveRecord::Base.connection.migration_context.needs_migration?],
       [:text_minimagick_available,     Object.const_defined?(:MiniMagick)],
       [:text_convert_available,        Redmine::Thumbnail.convert_available?],
       [:text_gs_available,             Redmine::Thumbnail.gs_available?]

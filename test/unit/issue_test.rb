@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -151,15 +151,15 @@ class IssueTest < ActiveSupport::TestCase
     assert !issue.save
     assert_equal ["Database cannot be blank"], issue.errors.full_messages
     # Blank value
-    issue.custom_field_values = { field.id => '' }
+    issue.custom_field_values = {field.id => ''}
     assert !issue.save
     assert_equal ["Database cannot be blank"], issue.errors.full_messages
     # Invalid value
-    issue.custom_field_values = { field.id => 'SQLServer' }
+    issue.custom_field_values = {field.id => 'SQLServer'}
     assert !issue.save
     assert_equal ["Database is not included in the list"], issue.errors.full_messages
     # Valid value
-    issue.custom_field_values = { field.id => 'PostgreSQL' }
+    issue.custom_field_values = {field.id => 'PostgreSQL'}
     assert issue.save
     issue.reload
     assert_equal 'PostgreSQL', issue.custom_value_for(field).value
@@ -216,6 +216,17 @@ class IssueTest < ActiveSupport::TestCase
 
   def assert_visibility_match(user, issues)
     assert_equal issues.collect(&:id).sort, Issue.all.select {|issue| issue.visible?(user)}.collect(&:id).sort
+  end
+
+  def test_create_with_emoji_character
+    skip if Redmine::Database.mysql? && !is_mysql_utf8mb4
+
+    set_language_if_valid 'en'
+    issue = Issue.new(:project_id => 1, :tracker_id => 1,
+                      :author_id => 1, :subject => 'Group assignment',
+                      :description => 'Hello 😀')
+    assert issue.save
+    assert_equal 'Hello 😀', issue.description
   end
 
   def test_visible_scope_for_anonymous
@@ -568,7 +579,7 @@ class IssueTest < ActiveSupport::TestCase
                       :description => 'IssueTest#test_create_with_required_custom_field')
     assert issue.available_custom_fields.include?(field)
     # Invalid value
-    issue.custom_field_values = { field.id => 'SQLServer' }
+    issue.custom_field_values = {field.id => 'SQLServer'}
 
     assert !issue.valid?
     assert_equal 1, issue.errors.full_messages.size
@@ -586,10 +597,10 @@ class IssueTest < ActiveSupport::TestCase
     # No change to custom values, issue can be saved
     assert issue.save
     # Blank value
-    issue.custom_field_values = { field.id => '' }
+    issue.custom_field_values = {field.id => ''}
     assert !issue.save
     # Valid value
-    issue.custom_field_values = { field.id => 'PostgreSQL' }
+    issue.custom_field_values = {field.id => 'PostgreSQL'}
     assert issue.save
     issue.reload
     assert_equal 'PostgreSQL', issue.custom_value_for(field).value
@@ -600,7 +611,7 @@ class IssueTest < ActiveSupport::TestCase
     field = IssueCustomField.find_by_name('Database')
     assert issue.available_custom_fields.include?(field)
 
-    issue.custom_field_values = { field.id => 'Invalid' }
+    issue.custom_field_values = {field.id => 'Invalid'}
     issue.subject = 'Should be not be saved'
     assert !issue.save
 
@@ -612,11 +623,11 @@ class IssueTest < ActiveSupport::TestCase
     field = IssueCustomField.find_by_name('Database')
 
     issue = Issue.find(1)
-    issue.custom_field_values = { field.id => 'PostgreSQL' }
+    issue.custom_field_values = {field.id => 'PostgreSQL'}
     assert issue.save
     custom_value = issue.custom_value_for(field)
     issue.reload
-    issue.custom_field_values = { field.id => 'MySQL' }
+    issue.custom_field_values = {field.id => 'MySQL'}
     assert issue.save
     issue.reload
     assert_equal custom_value.id, issue.custom_value_for(field).id
@@ -696,7 +707,7 @@ class IssueTest < ActiveSupport::TestCase
 
   def test_assigning_tracker_and_custom_fields_should_assign_custom_fields
     attributes = ActiveSupport::OrderedHash.new
-    attributes['custom_field_values'] = { '1' => 'MySQL' }
+    attributes['custom_field_values'] = {'1' => 'MySQL'}
     attributes['tracker_id'] = '1'
     issue = Issue.new(:project => Project.find(1))
     issue.attributes = attributes
@@ -1429,7 +1440,7 @@ class IssueTest < ActiveSupport::TestCase
     copy = issue.reload.copy
     assert_difference 'Issue.count', 1+issue.descendants.count do
       assert copy.save
-      assert copy.save
+      assert copy.reload.save
     end
   end
 
@@ -1498,6 +1509,23 @@ class IssueTest < ActiveSupport::TestCase
     end
 
     assert_equal [3, nil], copy.children.map(&:assigned_to_id)
+  end
+
+  def test_copy_should_not_add_attachments_to_journal
+    set_tmp_attachments_directory
+    issue = Issue.generate!
+    copy = Issue.new
+    copy.init_journal User.find(1)
+    copy.copy_from issue
+
+    copy.project = issue.project
+    copy.save_attachments(
+      { 'p0' => {'file' => mock_file_with_options(:original_filename => 'upload')} }
+    )
+    assert copy.save
+    assert j = copy.journals.last
+    assert_equal 1, j.details.size
+    assert_equal 'relation', j.details[0].property
   end
 
   def test_should_not_call_after_project_change_on_creation
@@ -1622,6 +1650,14 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal ['open'], issue.assignable_versions.collect(&:status).uniq
   end
 
+  def test_should_not_be_able_to_set_an_invalid_version_id
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1,
+                      :status_id => 1, :fixed_version_id => 424242,
+                      :subject => 'New issue')
+    assert !issue.save
+    assert_not_equal [], issue.errors[:fixed_version_id]
+  end
+
   def test_should_not_be_able_to_assign_a_new_issue_to_a_closed_version
     issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1,
                       :status_id => 1, :fixed_version_id => 1,
@@ -1693,6 +1729,14 @@ class IssueTest < ActiveSupport::TestCase
     assert issue.save
   end
 
+  def test_should_not_be_able_to_set_an_invalid_category_id
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1,
+                      :status_id => 1, :category_id => 3,
+                      :subject => 'New issue')
+    assert !issue.save
+    assert_not_equal [], issue.errors[:category_id]
+  end
+
   def test_allowed_target_projects_should_include_projects_with_issue_tracking_enabled
     assert_include Project.find(2), Issue.allowed_target_projects(User.find(2))
   end
@@ -1706,6 +1750,17 @@ class IssueTest < ActiveSupport::TestCase
     project = Project.generate!(:tracker_ids => [])
     assert project.trackers.empty?
     assert_not_include project, Issue.allowed_target_projects(User.find(1))
+  end
+
+  def test_allowed_target_projects_for_subtask_should_not_include_invalid_projects
+    User.current = User.find(1)
+    issue = Issue.find(1)
+    issue.parent_id = 3
+
+    with_settings :cross_project_subtasks => 'tree' do
+      # Should include only the project tree
+      assert_equal [1, 3, 5], issue.allowed_target_projects_for_subtask.ids.sort
+    end
   end
 
   def test_allowed_target_trackers_with_one_role_allowed_on_all_trackers
@@ -2463,6 +2518,7 @@ class IssueTest < ActiveSupport::TestCase
     relation = new_record(IssueRelation) do
       copy.save!
     end
+    copy.reload
 
     copy.parent_issue_id = parent.id
     assert_save copy
@@ -2646,7 +2702,7 @@ class IssueTest < ActiveSupport::TestCase
       issue.assigned_to = nil
       issue.save!
 
-      assert_include [user.mail], ActionMailer::Base.deliveries.map(&:bcc)
+      assert_include [user.mail], ActionMailer::Base.deliveries.map(&:to)
     end
   end
 
@@ -2717,7 +2773,7 @@ class IssueTest < ActiveSupport::TestCase
                                      :possible_values => ['value1', 'value2', 'value3'],
                                      :multiple => true)
 
-    issue = Issue.create!(:project_id => 1, :tracker_id => 1,
+    issue = Issue.generate!(:project_id => 1, :tracker_id => 1,
                           :subject => 'Test', :author_id => 1)
 
     assert_difference 'Journal.count' do
@@ -2848,8 +2904,8 @@ class IssueTest < ActiveSupport::TestCase
 
     groups = Issue.by_version(project)
     groups_containing_subprojects = Issue.by_version(project, true)
-    assert_equal 3, groups.inject(0) {|sum, group| sum + group['total'].to_i}
-    assert_equal 4, groups_containing_subprojects.inject(0) {|sum, group| sum + group['total'].to_i}
+    assert_equal 7, groups.inject(0) {|sum, group| sum + group['total'].to_i}
+    assert_equal 14, groups_containing_subprojects.inject(0) {|sum, group| sum + group['total'].to_i}
   end
 
   test "#by_priority" do
@@ -2869,8 +2925,8 @@ class IssueTest < ActiveSupport::TestCase
 
     groups = Issue.by_category(project)
     groups_containing_subprojects = Issue.by_category(project, true)
-    assert_equal 3, groups.inject(0) {|sum, group| sum + group['total'].to_i}
-    assert_equal 4, groups_containing_subprojects.inject(0) {|sum, group| sum + group['total'].to_i}
+    assert_equal 7, groups.inject(0) {|sum, group| sum + group['total'].to_i}
+    assert_equal 14, groups_containing_subprojects.inject(0) {|sum, group| sum + group['total'].to_i}
   end
 
   test "#by_assigned_to" do
@@ -2880,8 +2936,8 @@ class IssueTest < ActiveSupport::TestCase
 
     groups = Issue.by_assigned_to(project)
     groups_containing_subprojects = Issue.by_assigned_to(project, true)
-    assert_equal 2, groups.inject(0) {|sum, group| sum + group['total'].to_i}
-    assert_equal 3, groups_containing_subprojects.inject(0) {|sum, group| sum + group['total'].to_i}
+    assert_equal 7, groups.inject(0) {|sum, group| sum + group['total'].to_i}
+    assert_equal 14, groups_containing_subprojects.inject(0) {|sum, group| sum + group['total'].to_i}
   end
 
   test "#by_author" do
@@ -3342,5 +3398,49 @@ class IssueTest < ActiveSupport::TestCase
 
     assert !child.reopenable?
     assert_equal l(:notice_issue_not_reopenable_by_closed_parent_issue), child.transition_warning
+  end
+
+  def test_filter_projects_scope
+    Issue.send(:public, :filter_projects_scope)
+    # Project eCookbook
+    issue = Issue.find(1)
+
+    assert_equal Project, issue.filter_projects_scope
+    assert_equal Project, issue.filter_projects_scope('system')
+
+    # Project Onlinestore (id 2) is not part of the tree
+    assert_equal [1, 3, 4, 5, 6], Issue.find(5).filter_projects_scope('tree').ids.sort
+
+    # Project "Private child of eCookbook"
+    issue2 = Issue.find(9)
+
+    # Projects "eCookbook Subproject 1" (id 3) and "eCookbook Subproject 1" (id 4) are not part of hierarchy
+    assert_equal [1, 5, 6], issue2.filter_projects_scope('hierarchy').ids.sort
+
+    # Project "Child of private child" is descendant of "Private child of eCookbook"
+    assert_equal [5, 6], issue2.filter_projects_scope('descendants').ids.sort
+
+    assert_equal [5], issue2.filter_projects_scope('').ids.sort
+  end
+
+  def test_like_should_escape_query
+    issue = Issue.generate!(:subject => "asdf")
+    r = Issue.like('as_f')
+    assert_not_include issue, r
+    r = Issue.like('as%f')
+    assert_not_include issue, r
+
+    issue = Issue.generate!(:subject => "as%f")
+    r = Issue.like('as%f')
+    assert_include issue, r
+
+    issue = Issue.generate!(:subject => "as_f")
+    r = Issue.like('as_f')
+    assert_include issue, r
+  end
+
+  def test_like_should_tokenize
+    r = Issue.like('issue today')
+    assert_include Issue.find(7), r
   end
 end

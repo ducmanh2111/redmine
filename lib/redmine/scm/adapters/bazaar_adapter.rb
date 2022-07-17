@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -85,7 +85,7 @@ module Redmine
           end
           info
         rescue ScmCommandAborted
-          return nil
+          nil
         end
 
         # Returns an Entries collection
@@ -124,7 +124,7 @@ module Redmine
           end
           entries.sort_by_name
         rescue ScmCommandAborted
-          return nil
+          nil
         end
 
         def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})
@@ -192,7 +192,7 @@ module Redmine
           end
           revisions
         rescue ScmCommandAborted
-          return nil
+          nil
         end
 
         def diff(path, identifier_from, identifier_to=nil)
@@ -228,7 +228,7 @@ module Redmine
           end
           cat
         rescue ScmCommandAborted
-          return nil
+          nil
         end
 
         def annotate(path, identifier=nil)
@@ -256,7 +256,7 @@ module Redmine
           end
           blame
         rescue ScmCommandAborted
-          return nil
+          nil
         end
 
         def self.branch_conf_path(path)

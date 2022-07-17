@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -41,6 +41,8 @@ module QueriesHelper
         group = :label_date
       elsif %w(estimated_hours spent_time).include?(field)
         group = :label_time_tracking
+      elsif %w(attachment attachment_description).include?(field)
+        group = :label_attachment
       end
       if group
         (grouped[group] ||= []) << [field_options[:name], field]
@@ -92,7 +94,14 @@ module QueriesHelper
   def available_block_columns_tags(query)
     tags = ''.html_safe
     query.available_block_columns.each do |column|
-      tags << content_tag('label', check_box_tag('c[]', column.name.to_s, query.has_column?(column), :id => nil) + " #{column.caption}", :class => 'inline')
+      tags <<
+        content_tag(
+          'label',
+          check_box_tag(
+            'c[]', column.name.to_s,
+            query.has_column?(column), :id => nil
+          ) + " #{column.caption}", :class => 'inline'
+        )
     end
     tags
   end
@@ -101,18 +110,27 @@ module QueriesHelper
     tag_name = (options[:name] || 't') + '[]'
     tags = ''.html_safe
     query.available_totalable_columns.each do |column|
-      tags << content_tag('label', check_box_tag(tag_name, column.name.to_s, query.totalable_columns.include?(column), :id => nil) + " #{column.caption}", :class => 'inline')
+      tags <<
+        content_tag(
+          'label',
+          check_box_tag(
+            tag_name, column.name.to_s,
+            query.totalable_columns.include?(column), :id => nil
+          ) + " #{column.caption}", :class => 'inline'
+        )
     end
     tags << hidden_field_tag(tag_name, '')
     tags
   end
 
   def query_available_inline_columns_options(query)
-    (query.available_inline_columns - query.columns).reject(&:frozen?).collect {|column| [column.caption, column.name]}
+    (query.available_inline_columns - query.columns).
+      reject(&:frozen?).collect {|column| [column.caption, column.name]}
   end
 
   def query_selected_inline_columns_options(query)
-    (query.inline_columns & query.available_inline_columns).reject(&:frozen?).collect {|column| [column.caption, column.name]}
+    (query.inline_columns & query.available_inline_columns).
+      reject(&:frozen?).collect {|column| [column.caption, column.name]}
   end
 
   def render_query_columns_selection(query, options={})
@@ -158,6 +176,7 @@ module QueriesHelper
 
   def render_query_totals(query)
     return unless query.totalable_columns.present?
+
     totals = query.totalable_columns.map do |column|
       total_tag(column, query.total_for(column))
     end
@@ -212,44 +231,56 @@ module QueriesHelper
 
   def column_content(column, item)
     value = column.value_object(item)
-    if value.is_a?(Array)
-      values = value.collect {|v| column_value(column, item, v)}.compact
-      safe_join(values, ', ')
-    else
-      column_value(column, item, value)
-    end
+    content =
+      if value.is_a?(Array)
+        values = value.collect {|v| column_value(column, item, v)}.compact
+        safe_join(values, ', ')
+      else
+        column_value(column, item, value)
+      end
+
+    call_hook(:helper_queries_column_content,
+              {:content => content, :column => column, :item => item})
+
+    content
   end
 
   def column_value(column, item, value)
-    case column.name
-    when :id
-      link_to value, issue_path(item)
-    when :subject
-      link_to value, issue_path(item)
-    when :parent
-      value ? (value.visible? ? link_to_issue(value, :subject => false) : "##{value.id}") : ''
-    when :description
-      item.description? ? content_tag('div', textilizable(item, :description), :class => "wiki") : ''
-    when :last_notes
-      item.last_notes.present? ? content_tag('div', textilizable(item, :last_notes), :class => "wiki") : ''
-    when :done_ratio
-      progress_bar(value)
-    when :relations
-      content_tag(
-        'span',
-        value.to_s(item) {|other| link_to_issue(other, :subject => false, :tracker => false)}.html_safe,
-        :class => value.css_classes_for(item))
-    when :hours, :estimated_hours, :total_estimated_hours
-      format_hours(value)
-    when :spent_hours
-      link_to_if(value > 0, format_hours(value), project_time_entries_path(item.project, :issue_id => "#{item.id}"))
-    when :total_spent_hours
-      link_to_if(value > 0, format_hours(value), project_time_entries_path(item.project, :issue_id => "~#{item.id}"))
-    when :attachments
-      value.to_a.map {|a| format_object(a)}.join(" ").html_safe
-    else
-      format_object(value)
-    end
+    content =
+      case column.name
+      when :id
+        link_to value, issue_path(item)
+      when :subject
+        link_to value, issue_path(item)
+      when :parent
+        value ? (value.visible? ? link_to_issue(value, :subject => false) : "##{value.id}") : ''
+      when :description
+        item.description? ? content_tag('div', textilizable(item, :description), :class => "wiki") : ''
+      when :last_notes
+        item.last_notes.present? ? content_tag('div', textilizable(item, :last_notes), :class => "wiki") : ''
+      when :done_ratio
+        progress_bar(value)
+      when :relations
+        content_tag(
+          'span',
+          value.to_s(item) {|other| link_to_issue(other, :subject => false, :tracker => false)}.html_safe,
+          :class => value.css_classes_for(item))
+      when :hours, :estimated_hours, :total_estimated_hours
+        format_hours(value)
+      when :spent_hours
+        link_to_if(value > 0, format_hours(value), project_time_entries_path(item.project, :issue_id => "#{item.id}"))
+      when :total_spent_hours
+        link_to_if(value > 0, format_hours(value), project_time_entries_path(item.project, :issue_id => "~#{item.id}"))
+      when :attachments
+        value.to_a.map {|a| format_object(a)}.join(" ").html_safe
+      else
+        format_object(value)
+      end
+
+    call_hook(:helper_queries_column_value,
+              {:content => content, :column => column, :item => item, :value => value})
+
+    content
   end
 
   def csv_content(column, item)
@@ -307,18 +338,38 @@ module QueriesHelper
       scope = scope.or(klass.where(:project_id => @project)) if @project
       @query = scope.find(params[:query_id])
       raise ::Unauthorized unless @query.visible?
+
       @query.project = @project
       session[session_key] = {:id => @query.id, :project_id => @query.project_id} if use_session
-    elsif api_request? || params[:set_filter] || !use_session || session[session_key].nil? || session[session_key][:project_id] != (@project ? @project.id : nil)
+    elsif api_request? || params[:set_filter] || !use_session ||
+            session[session_key].nil? ||
+            session[session_key][:project_id] != (@project ? @project.id : nil)
       # Give it a name, required to be valid
       @query = klass.new(:name => "_", :project => @project)
       @query.build_from_params(params, options[:defaults])
-      session[session_key] = {:project_id => @query.project_id, :filters => @query.filters, :group_by => @query.group_by, :column_names => @query.column_names, :totalable_names => @query.totalable_names, :sort => @query.sort_criteria.to_a} if use_session
+      if use_session
+        session[session_key] = {
+          :project_id => @query.project_id,
+          :filters => @query.filters,
+          :group_by => @query.group_by,
+          :column_names => @query.column_names,
+          :totalable_names => @query.totalable_names,
+          :sort => @query.sort_criteria.to_a
+        }
+      end
     else
       # retrieve from session
       @query = nil
       @query = klass.find_by_id(session[session_key][:id]) if session[session_key][:id]
-      @query ||= klass.new(:name => "_", :filters => session[session_key][:filters], :group_by => session[session_key][:group_by], :column_names => session[session_key][:column_names], :totalable_names => session[session_key][:totalable_names], :sort_criteria => session[session_key][:sort])
+      @query ||=
+        klass.new(
+          :name => "_",
+          :filters => session[session_key][:filters],
+          :group_by => session[session_key][:group_by],
+          :column_names => session[session_key][:column_names],
+          :totalable_names => session[session_key][:totalable_names],
+          :sort_criteria => session[session_key][:sort]
+        )
       @query.project = @project
     end
     if params[:sort].present?
@@ -340,7 +391,15 @@ module QueriesHelper
         @query = IssueQuery.find_by_id(session_data[:id])
         return unless @query
       else
-        @query = IssueQuery.new(:name => "_", :filters => session_data[:filters], :group_by => session_data[:group_by], :column_names => session_data[:column_names], :totalable_names => session_data[:totalable_names], :sort_criteria => session[session_key][:sort])
+        @query =
+          IssueQuery.new(
+            :name => "_",
+            :filters => session_data[:filters],
+            :group_by => session_data[:group_by],
+            :column_names => session_data[:column_names],
+            :totalable_names => session_data[:totalable_names],
+            :sort_criteria => session[session_key][:sort]
+          )
       end
       if session_data.has_key?(:project_id)
         @query.project_id = session_data[:project_id]
@@ -348,6 +407,8 @@ module QueriesHelper
         @query.project = @project
       end
       @query
+    else
+      @query = klass.default project: @project
     end
   end
 
@@ -396,22 +457,35 @@ module QueriesHelper
   # Renders a group of queries
   def query_links(title, queries)
     return '' if queries.empty?
+
     # links to #index on issues/show
     url_params =
       if controller_name == 'issues'
         {:controller => 'issues', :action => 'index', :project_id => @project}
+      elsif controller_name == 'admin' && action_name == 'projects'
+        {:admin_projects => '1'}
       else
         {}
       end
+    default_query_by_class = {}
     content_tag('h3', title) + "\n" +
       content_tag(
         'ul',
         queries.collect do |query|
           css = +'query'
           clear_link = +''
+          clear_link_param = {:set_filter => 1, :sort => '', :project_id => @project}
+
+          default_query =
+            default_query_by_class[query.class] ||= query.class.default(project: @project)
+          if query == default_query
+            css << ' default'
+            clear_link_param[:without_default] = 1
+          end
+
           if query == @query
             css << ' selected'
-            clear_link += link_to_clear_query
+            clear_link += link_to_clear_query(clear_link_param)
           end
           content_tag('li',
                       link_to(query.name,
@@ -423,10 +497,10 @@ module QueriesHelper
       ) + "\n"
   end
 
-  def link_to_clear_query
+  def link_to_clear_query(params = {:set_filter => 1, :sort => '', :project_id => @project})
     link_to(
       l(:button_clear),
-      {:set_filter => 1, :sort => '', :project_id => @project},
+      params,
       :class => 'icon-only icon-clear-query',
       :title => l(:button_clear)
     )

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -53,8 +53,8 @@ class Setting < ActiveRecord::Base
                   windows-1257
                   windows-1258
                   windows-31j
+                  windows-874
                   ISO-2022-JP
-                  ISO-2022-KR
                   ISO-8859-1
                   ISO-8859-2
                   ISO-8859-3
@@ -74,9 +74,9 @@ class Setting < ActiveRecord::Base
                   EUC-JP
                   Shift_JIS
                   CP932
+                  CP949
                   GB18030
                   GBK
-                  ISCII91
                   EUC-KR
                   Big5
                   Big5-HKSCS
@@ -87,6 +87,7 @@ class Setting < ActiveRecord::Base
 
   validates_uniqueness_of(
     :name,
+    :case_sensitive => true,
     :if => Proc.new do |setting|
       setting.new_record? || setting.name_changed?
     end
@@ -107,7 +108,8 @@ class Setting < ActiveRecord::Base
     v = read_attribute(:value)
     # Unserialize serialized settings
     if available_settings[name]['serialized'] && v.is_a?(String)
-      v = YAML::load(v)
+      # YAML.load works as YAML.safe_load if Psych >= 4.0 is installed
+      v = YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(v) : YAML.load(v)
       v = force_utf8_strings(v)
     end
     v = v.to_sym if available_settings[name]['format'] == 'symbol' && !v.blank?
@@ -197,7 +199,7 @@ class Setting < ActiveRecord::Base
   # Sets a setting value from params
   def self.set_from_params(name, params)
     params = params.dup
-    params.delete_if {|v| v.blank? } if params.is_a?(Array)
+    params.delete_if {|v| v.blank?} if params.is_a?(Array)
     params.symbolize_keys! if params.is_a?(Hash)
 
     m = "#{name}_from_params"
@@ -221,11 +223,11 @@ class Setting < ActiveRecord::Base
       params[:keywords].each_with_index do |keywords, i|
         next if keywords.blank?
 
-        s << attributes.inject({}) {|h, a|
+        s << attributes.inject({}) do |h, a|
           value = params[a][i].to_s
           h[a.to_s] = value if value.present?
           h
-        }.merge('keywords' => keywords)
+        end.merge('keywords' => keywords)
       end
     end
     s
@@ -235,6 +237,18 @@ class Setting < ActiveRecord::Base
     # unpair all current 2FA pairings when switching off 2FA
     Redmine::Twofa.unpair_all! if params == '0' && self.twofa?
     params
+  end
+
+  def self.twofa_required?
+    twofa == '2'
+  end
+
+  def self.twofa_optional?
+    %w[1 3].include? twofa
+  end
+
+  def self.twofa_required_for_administrators?
+    twofa == '3'
   end
 
   # Helper that returns an array based on per_page_options setting
@@ -258,10 +272,6 @@ class Setting < ActiveRecord::Base
       end
     end
     a
-  end
-
-  def self.openid?
-    Object.const_defined?(:OpenID) && self[:openid].to_i > 0
   end
 
   # Checks if settings have changed since the values were read

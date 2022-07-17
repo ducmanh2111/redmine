@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -50,12 +50,16 @@ class ImportsController < ApplicationController
 
   def settings
     if request.post? && @import.parse_file
-      redirect_to import_mapping_path(@import)
+      if @import.total_items == 0
+        flash.now[:error] = l(:error_no_data_in_file)
+      else
+        redirect_to import_mapping_path(@import)
+      end
     end
 
   rescue CSV::MalformedCSVError, EncodingError => e
     if e.is_a?(CSV::MalformedCSVError) && e.message !~ /Invalid byte sequence/
-      flash.now[:error] = l(:error_invalid_csv_file_or_settings)
+      flash.now[:error] = l(:error_invalid_csv_file_or_settings, e.message)
     else
       flash.now[:error] = l(:error_invalid_file_encoding, :encoding => ERB::Util.h(@import.settings['encoding']))
     end
@@ -70,13 +74,13 @@ class ImportsController < ApplicationController
       auto_map_fields
     elsif request.post?
       respond_to do |format|
-        format.html {
+        format.html do
           if params[:previous]
             redirect_to import_settings_path(@import)
           else
             redirect_to import_run_path(@import)
           end
-        }
+        end
         format.js # updates mapping form on project or tracker change
       end
     end
@@ -89,13 +93,13 @@ class ImportsController < ApplicationController
         :max_time => 10.seconds
       )
       respond_to do |format|
-        format.html {
+        format.html do
           if @import.finished?
             redirect_to import_path(@import)
           else
             redirect_to import_run_path(@import)
           end
-        }
+        end
         format.js
       end
     end
@@ -141,8 +145,7 @@ class ImportsController < ApplicationController
 
   def menu_items
     menu_item = import_type ? import_type.menu_item : nil
-
-    { self.controller_name.to_sym => { :actions => {}, :default => menu_item } }
+    {self.controller_name.to_sym => {:actions => {}, :default => menu_item}}
   end
 
   def authorize_import
@@ -174,11 +177,12 @@ class ImportsController < ApplicationController
     return if @import.settings['encoding'].blank?
 
     mappings = @import.settings['mapping'] ||= {}
-    headers = @import.headers.map(&:downcase)
+    headers = @import.headers.map{|header| header&.downcase}
 
     # Core fields
     import_type::AUTO_MAPPABLE_FIELDS.each do |field_nm, label_nm|
       next if mappings.include?(field_nm)
+
       index = headers.index(field_nm) || headers.index(l(label_nm).downcase)
       if index
         mappings[field_nm] = index
@@ -189,6 +193,7 @@ class ImportsController < ApplicationController
     @custom_fields.each do |field|
       field_nm = "cf_#{field.id}"
       next if mappings.include?(field_nm)
+
       index = headers.index(field_nm) || headers.index(field.name.downcase)
       if index
         mappings[field_nm] = index

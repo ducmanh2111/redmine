@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.expand_path('../redcloth3', __FILE__)
 require 'digest/md5'
 
 module Redmine
@@ -26,6 +25,7 @@ module Redmine
       class Formatter < RedCloth3
         include ActionView::Helpers::TagHelper
         include Redmine::WikiFormatting::LinksHelper
+        include Redmine::WikiFormatting::SectionHelper
 
         alias :inline_auto_link :auto_link!
         alias :inline_auto_mailto :auto_mailto!
@@ -44,22 +44,6 @@ module Redmine
         def to_html(*rules)
           @toc = []
           super(*RULES).to_s
-        end
-
-        def get_section(index)
-          section = extract_sections(index)[1]
-          hash = Digest::MD5.hexdigest(section)
-          return section, hash
-        end
-
-        def update_section(index, update, hash=nil)
-          t = extract_sections(index)
-          if hash.present? && hash != Digest::MD5.hexdigest(t[1])
-            raise Redmine::WikiFormatting::StaleSectionError
-          end
-
-          t[1] = update unless t[1].blank?
-          t.reject(&:blank?).join "\n\n"
         end
 
         def extract_sections(index)
@@ -128,12 +112,14 @@ module Redmine
               if content.match(/<code\s+class=(?:"([^"]+)"|'([^']+)')>\s?(.*)/m)
                 language = $1 || $2
                 text = $3
+                # original language for extension development
+                langattr = " data-language=\"#{CGI.escapeHTML language}\"" if language.present?
                 if Redmine::SyntaxHighlighting.language_supported?(language)
                   text.gsub!(/x%x%/, '&')
-                  content = "<code class=\"#{language} syntaxhl\">" +
+                  content = "<code class=\"#{CGI.escapeHTML language} syntaxhl\"#{langattr}>" +
                     Redmine::SyntaxHighlighting.highlight_by_language(text, language)
                 else
-                  content = "<code>#{ERB::Util.h(text)}"
+                  content = "<code#{langattr}>#{ERB::Util.h(text)}"
                 end
               end
               content

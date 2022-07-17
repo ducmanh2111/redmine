@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,9 +22,8 @@ module Redmine
     class TimeReport
       attr_reader :criteria, :columns, :hours, :total_hours, :periods
 
-      def initialize(project, issue, criteria, columns, time_entry_scope)
+      def initialize(project, criteria, columns, time_entry_scope)
         @project = project
-        @issue = issue
 
         @criteria = criteria || []
         @criteria = @criteria.select{|criteria| available_criteria.has_key? criteria}
@@ -123,7 +122,7 @@ module Redmine
           'tracker' => {:sql => "#{Issue.table_name}.tracker_id",
                         :klass => Tracker,
                         :label => :label_tracker},
-          'activity' => {:sql => "#{TimeEntry.table_name}.activity_id",
+          'activity' => {:sql => "COALESCE(#{TimeEntryActivity.table_name}.parent_id, #{TimeEntryActivity.table_name}.id)",
                          :klass => TimeEntryActivity,
                          :label => :field_activity},
           'issue' => {:sql => "#{TimeEntry.table_name}.issue_id",

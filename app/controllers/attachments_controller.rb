@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -37,7 +37,7 @@ class AttachmentsController < ApplicationController
 
   def show
     respond_to do |format|
-      format.html {
+      format.html do
         if @attachment.container.respond_to?(:attachments)
           @attachments = @attachment.container.attachments.to_a
           if index = @attachments.index(@attachment)
@@ -64,7 +64,7 @@ class AttachmentsController < ApplicationController
         else
           render :action => 'other'
         end
-      }
+      end
       format.api
     end
   end
@@ -105,7 +105,7 @@ class AttachmentsController < ApplicationController
       return
     end
 
-    @attachment = Attachment.new(:file => request.raw_post)
+    @attachment = Attachment.new(:file => raw_request_body)
     @attachment.author = User.current
     @attachment.filename = params[:filename].presence || Redmine::Utils.random_hex(16)
     @attachment.content_type = params[:content_type].presence
@@ -113,13 +113,13 @@ class AttachmentsController < ApplicationController
 
     respond_to do |format|
       format.js
-      format.api {
+      format.api do
         if saved
           render :action => 'upload', :status => :created
         else
           render_validation_errors(@attachment)
         end
-      }
+      end
     end
   end
 
@@ -155,13 +155,13 @@ class AttachmentsController < ApplicationController
     saved = @attachment.save
 
     respond_to do |format|
-      format.api {
+      format.api do
         if saved
           render_api_ok
         else
           render_validation_errors(@attachment)
         end
-      }
+      end
     end
   end
 
@@ -177,9 +177,9 @@ class AttachmentsController < ApplicationController
     end
 
     respond_to do |format|
-      format.html { redirect_to_referer_or project_path(@project) }
+      format.html {redirect_to_referer_or project_path(@project)}
       format.js
-      format.api { render_api_ok }
+      format.api {render_api_ok}
     end
   end
 
@@ -207,6 +207,7 @@ class AttachmentsController < ApplicationController
     @attachment = Attachment.find(params[:id])
     # Show 404 if the filename in the url is wrong
     raise ActiveRecord::RecordNotFound if params[:filename] && params[:filename] != @attachment.filename
+
     @project = @attachment.project
   rescue ActiveRecord::RecordNotFound
     render_404
@@ -224,7 +225,7 @@ class AttachmentsController < ApplicationController
       rescue
         nil
       end
-    unless klass && klass.reflect_on_association(:attachments)
+    unless klass && (klass.reflect_on_association(:attachments) || klass.method_defined?(:attachments))
       render_404
       return
     end
@@ -301,5 +302,15 @@ class AttachmentsController < ApplicationController
   # Returns attachments param for #update_all
   def update_all_params
     params.permit(:attachments => [:filename, :description]).require(:attachments)
+  end
+
+  # Get an IO-like object for the request body which is usable to create a new
+  # attachment. We try to avoid having to read the whole body into memory.
+  def raw_request_body
+    if request.body.respond_to?(:size)
+      request.body
+    else
+      request.raw_post
+    end
   end
 end

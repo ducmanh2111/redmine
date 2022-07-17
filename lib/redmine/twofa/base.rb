@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -53,7 +53,7 @@ module Redmine
       end
 
       def deliver_twofa_paired
-        ::Mailer.security_notification(
+        ::Mailer.deliver_security_notification(
           @user,
           User.current,
           {
@@ -61,9 +61,9 @@ module Redmine
             message: 'twofa_mail_body_security_notification_paired',
             # (mis-)use field here as value wouldn't get localized
             field: "twofa__#{scheme_name}__name",
-            url: { controller: 'my', action: 'account' }
+            url: {controller: 'my', action: 'account'}
           }
-        ).deliver
+        )
       end
 
       def destroy_pairing!(code)
@@ -82,15 +82,15 @@ module Redmine
       end
 
       def deliver_twofa_unpaired
-        ::Mailer.security_notification(
+        ::Mailer.deliver_security_notification(
           @user,
           User.current,
           {
             title: :label_my_account,
             message: 'twofa_mail_body_security_notification_unpaired',
-            url: { controller: 'my', action: 'account' }
+            url: {controller: 'my', action: 'account'}
           }
-        ).deliver
+        )
       end
 
       def send_code(controller: nil, action: nil)
@@ -114,16 +114,17 @@ module Redmine
         Token.where(user_id: @user.id).find_token('twofa_backup_code', code).try(:delete)
         # make sure the user using the backup code is the same it's been issued to
         return false unless @user.present? && @user == user_from_code
-        ::Mailer.security_notification(
+
+        ::Mailer.deliver_security_notification(
           @user,
           User.current,
           {
             originator: @user,
             title: :label_my_account,
             message: 'twofa_mail_body_backup_code_used',
-            url: { controller: 'my', action: 'account' }
+            url: {controller: 'my', action: 'account'}
           }
-        ).deliver
+        )
         return true
       end
 
@@ -135,15 +136,15 @@ module Redmine
           token.update_columns value: Redmine::Utils.random_hex(6)
           tokens << token
         end
-        ::Mailer.security_notification(
+        ::Mailer.deliver_security_notification(
           @user,
           User.current,
           {
             title: :label_my_account,
             message: 'twofa_mail_body_backup_codes_generated',
-            url: { controller: 'my', action: 'account' }
+            url: {controller: 'my', action: 'account'}
           }
-        ).deliver
+        )
         tokens
       end
 

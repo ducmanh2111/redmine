@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -43,12 +43,14 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_add_issue_with_specific_overrides
-    issue = submit_email('ticket_on_given_project.eml',
-                         :allow_override =>
-                           ['status', 'start_date', 'due_date', 'assigned_to',
-                            'fixed_version', 'estimated_hours', 'done_ratio',
-                            'parent_issue']
-                         )
+    issue =
+      submit_email(
+        'ticket_on_given_project.eml',
+        :allow_override =>
+          ['status', 'start_date', 'due_date', 'assigned_to',
+           'fixed_version', 'estimated_hours', 'done_ratio',
+           'parent_issue']
+      )
     assert issue.is_a?(Issue)
     assert !issue.new_record?
     issue.reload
@@ -250,10 +252,12 @@ class MailHandlerTest < ActiveSupport::TestCase
                                          :name => 'OS', :multiple => true,
                                          :possible_values => ['Linux', 'Windows', 'Mac OS X'])
 
-    issue = submit_email('ticket_with_custom_fields.eml',
-                         :issue => {:project => 'onlinestore'},
-                         :allow_override => ['database', 'Searchable_field', 'OS']
-                         )
+    issue =
+      submit_email(
+        'ticket_with_custom_fields.eml',
+        :issue => {:project => 'onlinestore'},
+        :allow_override => ['database', 'Searchable_field', 'OS']
+      )
     assert issue.is_a?(Issue)
     assert !issue.new_record?
     issue.reload
@@ -269,12 +273,14 @@ class MailHandlerTest < ActiveSupport::TestCase
                                      :field_format => 'version',
                                      :is_for_all => true,
                                      :tracker_ids => [1, 2, 3])
-    issue = submit_email('ticket_with_custom_fields.eml',
-                         :issue => {:project => 'ecookbook'},
-                         :allow_override => ['affected version']
-                         ) do |email|
-                             email << "Affected version: 1.0\n"
-                         end
+    issue =
+      submit_email(
+        'ticket_with_custom_fields.eml',
+        :issue => {:project => 'ecookbook'},
+        :allow_override => ['affected version']
+      ) do |email|
+        email << "Affected version: 1.0\n"
+      end
     assert issue.is_a?(Issue)
     assert !issue.new_record?
     issue.reload
@@ -397,6 +403,35 @@ class MailHandlerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_no_issue_on_closed_project_without_permission_check
+    Project.find(2).close
+    assert_no_difference 'User.count' do
+      assert_no_difference 'Issue.count' do
+        submit_email(
+          'ticket_by_unknown_user.eml',
+          :issue => {:project => 'onlinestore'},
+          :no_permission_check => '1',
+          :unknown_user => 'accept'
+        )
+      end
+    end
+  ensure
+    Project.find(2).reopen
+  end
+
+  def test_no_issue_on_closed_project_without_issue_tracking_module
+    assert_no_difference 'User.count' do
+      assert_no_difference 'Issue.count' do
+        submit_email(
+          'ticket_by_unknown_user.eml',
+          :issue => {:project => 'subproject2'},
+          :no_permission_check => '1',
+          :unknown_user => 'accept'
+        )
+      end
+    end
+  end
+
   def test_add_issue_by_created_user
     Setting.default_language = 'en'
     assert_difference 'User.count' do
@@ -427,10 +462,19 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert issue.is_a?(Issue)
     assert !issue.new_record?
 
-    mail = ActionMailer::Base.deliveries.last
-    assert_not_nil mail
-    assert mail.subject.include?("##{issue.id}")
-    assert mail.subject.include?('New ticket on a given project')
+    assert_equal 4, issue.parent_issue_id
+    assert_equal 2, ActionMailer::Base.deliveries.size
+
+    [
+      [issue.id, 'New ticket on a given project'],
+      [4, 'Issue on project 2'],
+    ].each do |issue_id, issue_subject|
+      mail =
+        ActionMailer::Base.deliveries.detect do |m|
+          /##{issue_id}/.match?(m.subject) && /#{issue_subject}/.match?(m.subject)
+        end
+      assert_not_nil mail
+    end
   end
 
   def test_created_user_should_be_added_to_groups
@@ -1045,6 +1089,18 @@ class MailHandlerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_reply_to_an_issue_without_permission
+    set_tmp_attachments_directory
+    # "add_issue_notes" permission is explicit required to allow users to add notes
+    # "edit_issue" permission no longer includes the "add_issue_notes" permission
+    Role.all.each {|r| r.remove_permission! :add_issue_notes}
+    assert_no_difference 'Issue.count' do
+      assert_no_difference 'Journal.count' do
+        assert_not submit_email('ticket_reply_with_status.eml')
+      end
+    end
+  end
+
   def test_reply_to_a_nonexitent_journal
     journal_id = Issue.find(2).journals.last.id
     Journal.destroy(journal_id)
@@ -1096,6 +1152,13 @@ class MailHandlerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_reply_to_a_topic_without_permission
+    Role.all.each {|r| r.remove_permission! :add_messages}
+    assert_no_difference('Message.count') do
+      assert_not submit_email('message_reply_by_subject.eml')
+    end
+  end
+
   def test_should_convert_tags_of_html_only_emails
     with_settings :text_formatting => 'textile' do
       issue = submit_email('ticket_html_only.eml', :issue => {:project => 'ecookbook'})
@@ -1120,9 +1183,12 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert issue.is_a?(Issue)
     issue.reload
     assert_equal 'Test email', issue.subject
-    assert_equal "Simple, unadorned test email generated by Outlook 2010. It is in HTML format, but" +
-      " no special formatting has been chosen. I’m going to save this as a draft and then manually" +
-      " drop it into the Inbox for scraping by Redmine 3.0.2.", issue.description
+    assert_equal(
+      "Simple, unadorned test email generated by Outlook 2010. It is in HTML format, but" \
+        " no special formatting has been chosen. I’m going to save this as a draft and then manually" \
+        " drop it into the Inbox for scraping by Redmine 3.0.2.",
+      issue.description
+    )
   end
 
   test "truncate emails with no setting should add the entire email into the issue" do
@@ -1227,7 +1293,13 @@ class MailHandlerTest < ActiveSupport::TestCase
   def test_email_with_long_subject_line
     issue = submit_email('ticket_with_long_subject.eml')
     assert issue.is_a?(Issue)
-    assert_equal issue.subject, 'New ticket on a given project with a very long subject line which exceeds 255 chars and should not be ignored but chopped off. And if the subject line is still not long enough, we just add more text. And more text. Wow, this is really annoying. Especially, if you have nothing to say...'[0, 255]
+    str =
+      'New ticket on a given project with a very long subject line' \
+        ' which exceeds 255 chars and should not be ignored but chopped off.' \
+        ' And if the subject line is still not long enough, we just add more text.' \
+        ' And more text. Wow, this is really annoying.' \
+        ' Especially, if you have nothing to say...'
+    assert_equal issue.subject, str[0, 255]
   end
 
   def test_first_keyword_should_be_matched

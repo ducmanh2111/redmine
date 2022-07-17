@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,7 +19,7 @@
 
 module Redmine
   # @private
-  module CoreExtensions
+  module CoreExt
     # @private
     module String
       # Custom string conversions
@@ -33,9 +33,9 @@ module Redmine
             s = $1
           else
             # 2:30 => 2.5
-            s.gsub!(%r{^(\d+):(\d+)$}) { $1.to_i + $2.to_i / 60.0 }
+            s.gsub!(%r{^(\d+):(\d+)$}) {$1.to_i + $2.to_i / 60.0}
             # 2h30, 2h, 30m => 2.5, 2, 0.5
-            s.gsub!(%r{^((\d+)\s*(h|hours?))?\s*((\d+)\s*(m|min)?)?$}i) { |m| ($1 || $4) ? ($2.to_i + $5.to_i / 60.0) : m[0] }
+            s.gsub!(%r{^((\d+)\s*(h|hours?))?\s*((\d+)\s*(m|min)?)?$}i) {|m| ($1 || $4) ? ($2.to_i + $5.to_i / 60.0) : m[0]}
           end
           # 2,5 => 2.5
           s.tr!(',', '.')

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -44,8 +44,8 @@ class RepositoriesMercurialControllerTest < Redmine::RepositoryControllerTest
   end
 
   if Encoding.default_external.to_s != 'UTF-8'
-    puts "TODO: Mercurial functional test fails " +
-         "when Encoding.default_external is not UTF-8. " +
+    puts "TODO: Mercurial functional test fails " \
+         "when Encoding.default_external is not UTF-8. " \
          "Current value is '#{Encoding.default_external}'"
     def test_fake; assert true end
   elsif File.directory?(REPOSITORY_PATH)
@@ -396,7 +396,7 @@ class RepositoriesMercurialControllerTest < Redmine::RepositoryControllerTest
           assert_response :success
           if @diff_c_support
             # Line 22 removed
-            assert_select 'th.line-num:contains(22) ~ td.diff_out', :text => /def remove/
+            assert_select 'th.line-num[data-txt=22] ~ td.diff_out', :text => /def remove/
             assert_select 'h2', :text => /4:def6d2f1254a/
           end
         end
@@ -492,7 +492,7 @@ class RepositoriesMercurialControllerTest < Redmine::RepositoryControllerTest
 
       # Line 22, revision 4:def6d2f1254a
       assert_select 'tr' do
-        assert_select 'th.line-num', :text => '22'
+        assert_select 'th.line-num a[data-txt=?]', '22'
         assert_select 'td.revision', :text => '4:def6d2f1254a'
         assert_select 'td.author', :text => 'jsmith'
         assert_select 'td', :text => /remove_watcher/
@@ -548,7 +548,8 @@ class RepositoriesMercurialControllerTest < Redmine::RepositoryControllerTest
           }
         )
         assert_response :success
-        assert_select "th.line-num", :text => '1' do
+        assert_select "th.line-num" do
+          assert_select "a[data-txt=?]", '1'
           assert_select "+ td.revision" do
             assert_select "a", :text => '20:709858aafd1b'
             assert_select "+ td.author", :text => "jsmith" do

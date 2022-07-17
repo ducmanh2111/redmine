@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,6 +33,8 @@ class ImportsControllerTest < Redmine::ControllerTest
            :custom_values,
            :custom_fields_projects,
            :custom_fields_trackers
+
+  include Redmine::I18n
 
   def setup
     User.current = nil
@@ -72,7 +74,14 @@ class ImportsControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_select 'select[name=?]', 'import_settings[separator]'
     assert_select 'select[name=?]', 'import_settings[wrapper]'
-    assert_select 'select[name=?]', 'import_settings[encoding]'
+    assert_select 'select[name=?]', 'import_settings[encoding]' do
+      encodings = valid_languages.map do |lang|
+        ll(lang.to_s, :general_csv_encoding)
+      end.uniq
+      encodings.each do |encoding|
+        assert_select 'option[value=?]', encoding
+      end
+    end
     assert_select 'select[name=?]', 'import_settings[date_format]'
   end
 
@@ -159,6 +168,48 @@ class ImportsControllerTest < Redmine::ControllerTest
     assert_select 'div#flash_error', /not a valid Shift_JIS encoded file/
   end
 
+  def test_post_settings_with_mailformed_csv_should_display_error
+    import = generate_import('unclosed_quoted_field.csv')
+
+    post(
+      :settings,
+      :params => {
+        :id => import.to_param,
+        :import_settings => {
+          :separator => ';',
+          :wrapper => '"',
+          :encoding => 'US-ASCII'
+        }
+      }
+    )
+    assert_response 200
+    import.reload
+    assert_nil import.total_items
+
+    assert_select 'div#flash_error', /The file is not a CSV file or does not match the settings below \([[:print:]]+\)/
+  end
+
+  def test_post_settings_with_no_data_row_should_display_error
+    import = generate_import('import_issues_no_data_row.csv')
+
+    post(
+      :settings,
+      :params => {
+        :id => import.to_param,
+        :import_settings => {
+          :separator => ';',
+          :wrapper => '"',
+          :encoding => 'ISO-8859-1'
+        }
+      }
+    )
+    assert_response 200
+    import.reload
+    assert_equal 0, import.total_items
+
+    assert_select 'div#flash_error', /The file does not contain any data/
+  end
+
   def test_get_mapping_should_display_mapping_form
     import = generate_import('import_iso8859-1.csv')
     import.settings = {'separator' => ";", 'wrapper' => '"', 'encoding' => "ISO-8859-1"}
@@ -222,6 +273,18 @@ class ImportsControllerTest < Redmine::ControllerTest
     #  - mapping is case insensitive
     assert_select 'select[name=?]', 'import_settings[mapping][cf_1]' do
       assert_select 'option[value="13"][selected="selected"]', :text => 'database'
+    end
+
+    # 'unique_id' should be auto selected because
+    # - 'unique_id' exists in the import file
+    assert_select 'select[name=?]', 'import_settings[mapping][unique_id]' do
+      assert_select 'option[value="15"][selected="selected"]', :text => 'unique_id'
+    end
+
+    # 'relation_duplicates' should be auto selected because
+    # - 'Is duplicate of' exists in the import file
+    assert_select 'select[name=?]', 'import_settings[mapping][relation_duplicates]' do
+      assert_select 'option[value="16"][selected="selected"]', :text => 'Is duplicate of'
     end
   end
 

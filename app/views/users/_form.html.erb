@@ -13,9 +13,6 @@
   <% unless @user.force_default_language? %>
   <p><%= f.select :language, lang_options_for_select %></p>
   <% end %>
-  <% if Setting.openid? %>
-  <p><%= f.text_field :identity_url  %></p>
-  <% end %>
 
   <% @user.custom_field_values.each do |value| %>
     <p><%= custom_field_tag_with_label :user, value %></p>
@@ -32,17 +29,17 @@
   <% end %>
   <div id="password_fields" style="<%= 'display:none;' if @user.auth_source %>">
   <p>
-    <%= f.password_field :password, :required => true, :size => 25  %>
+    <%= f.password_field :password, :required => @user.new_record?, :size => 25  %>
     <em class="info"><%= l(:text_caracters_minimum, :count => Setting.password_min_length) %></em>
     <% if Setting.password_required_char_classes.any? %>
       <em class="info"><%= l(:text_characters_must_contain, :character_classes => Setting.password_required_char_classes.collect{|c| l("label_password_char_class_#{c}")}.join(", ")) %></em>
     <% end %>
   </p>
-  <p><%= f.password_field :password_confirmation, :required => true, :size => 25  %></p>
+  <p><%= f.password_field :password_confirmation, :required => @user.new_record?, :size => 25  %></p>
   <p><%= f.check_box :generate_password %></p>
   <p><%= f.check_box :must_change_passwd %></p>
   </div>
-  <% if Setting.twofa? -%>
+  <% if Setting.twofa? && !@user.new_record? -%>
   <p>
     <label><%=l :setting_twofa -%></label>
     <% if @user.twofa_active? %>
@@ -64,6 +61,11 @@
 <fieldset class="box">
   <legend><%=l(:field_mail_notification)%></legend>
   <%= render :partial => 'users/mail_notifications' %>
+</fieldset>
+
+<fieldset class="box">
+  <legend><%=l(:label_auto_watch_on)%></legend>
+  <%= render :partial => 'users/auto_watch_on' %>
 </fieldset>
 
 <fieldset class="box tabular">

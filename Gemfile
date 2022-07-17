@@ -1,50 +1,55 @@
 source 'https://rubygems.org'
 
-ruby '>= 2.4.0', '< 2.8.0'
+ruby '>= 2.6.0', '< 3.2.0'
 gem 'bundler', '>= 1.12.0'
 
-gem 'rails', '5.2.4.4'
-gem 'sprockets', '~> 3.7.2' if RUBY_VERSION < '2.5'
-gem 'rouge', '~> 3.24.0'
+gem 'rails', '6.1.6'
+gem 'rouge', '~> 3.29.0'
 gem 'request_store', '~> 1.5.0'
-gem "mini_mime", "~> 1.0.1"
+gem 'mini_mime', '~> 1.1.0'
 gem "actionpack-xml_parser"
-gem "roadie-rails", (RUBY_VERSION < "2.5" ? "~> 1.3.0" : "~> 2.1.0")
-gem "mimemagic"
+gem 'roadie-rails', '~> 3.0.0'
+gem 'marcel'
 gem "mail", "~> 2.7.1"
-gem 'csv', (RUBY_VERSION < '2.5' ? ['>= 3.1.1', '<= 3.1.5'] : '~> 3.1.1')
-gem "nokogiri", "~> 1.10.0"
-gem 'i18n', '~> 1.8.2'
+gem 'csv', '~> 3.2.0'
+gem 'nokogiri', '~> 1.13.6'
+gem "rexml", require: false if Gem.ruby_version >= Gem::Version.new('3.0')
+gem 'i18n', '~> 1.12.0'
 gem "rbpdf", "~> 1.20.0"
 gem 'addressable'
 gem 'rubyzip', '~> 2.3.0'
+gem 'net-smtp', '~> 0.3.0'
+gem 'net-imap', '~> 0.2.2'
+gem 'net-pop', '~> 0.1.1'
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :x64_mingw, :mswin]
 
 # TOTP-based 2-factor authentication
-gem 'rotp'
+gem 'rotp', '>= 5.0.0'
 gem 'rqrcode'
 
 # Optional gem for LDAP authentication
 group :ldap do
-  gem "net-ldap", "~> 0.16.0"
-end
-
-# Optional gem for OpenID authentication
-group :openid do
-  gem "ruby-openid", "~> 2.9.2", :require => "openid"
-  gem "rack-openid"
+  gem 'net-ldap', '~> 0.17.0'
 end
 
 # Optional gem for exporting the gantt to a PNG file
 group :minimagick do
-  gem 'mini_magick', '~> 4.10.1'
+  gem 'mini_magick', '~> 4.11.0'
 end
 
-# Optional Markdown support, not for JRuby
+# Optional Markdown support
 group :markdown do
-  gem "redcarpet", "~> 3.5.0"
+  gem 'redcarpet', '~> 3.5.1'
+end
+
+# Optional CommonMark support, not for JRuby
+group :common_mark do
+  gem "html-pipeline", "~> 2.13.2"
+  gem "commonmarker", '0.23.4'
+  gem "sanitize", "~> 6.0"
+  gem 'deckar01-task_list', '2.3.2'
 end
 
 # Include database gems for the adapters found in the database
@@ -53,7 +58,8 @@ require 'erb'
 require 'yaml'
 database_file = File.join(File.dirname(__FILE__), "config/database.yml")
 if File.exist?(database_file)
-  database_config = YAML::load(ERB.new(IO.read(database_file)).result)
+  yaml_config = ERB.new(IO.read(database_file)).result
+  database_config = YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(yaml_config) : YAML.load(yaml_config)
   adapters = database_config.values.map {|c| c['adapter']}.compact.uniq
   if adapters.any?
     adapters.each do |adapter|
@@ -66,7 +72,7 @@ if File.exist?(database_file)
         gem "sqlite3", "~> 1.4.0", :platforms => [:mri, :mingw, :x64_mingw]
       when /sqlserver/
         gem "tiny_tds", "~> 2.1.2", :platforms => [:mri, :mingw, :x64_mingw]
-        gem "activerecord-sqlserver-adapter", "~> 5.2.1", :platforms => [:mri, :mingw, :x64_mingw]
+        gem "activerecord-sqlserver-adapter", "~> 6.1.0", :platforms => [:mri, :mingw, :x64_mingw]
       else
         warn("Unknown database adapter `#{adapter}` found in config/database.yml, use Gemfile.local to load your own database gems")
       end
@@ -79,26 +85,28 @@ else
 end
 
 group :development do
+  gem 'listen', '~> 3.3'
   gem "yard"
 end
 
 group :test do
   gem "rails-dom-testing"
   gem 'mocha', '>= 1.4.0'
-  gem 'simplecov', '~> 0.18.5', :require => false
+  gem 'simplecov', '~> 0.21.2', :require => false
   gem "ffi", platforms: [:mingw, :x64_mingw, :mswin]
   # For running system tests
   gem 'puma'
-  gem 'capybara', '~> 3.31.0'
-  gem "selenium-webdriver"
+  gem 'capybara', '~> 3.36.0'
+  gem "selenium-webdriver", "~> 3.142.7"
+  gem 'webdrivers', '4.6.1', require: false
   # RuboCop
-  gem 'rubocop', '~> 1.0.0'
-  gem 'rubocop-performance', '~> 1.8.0'
-  gem 'rubocop-rails', '~> 2.8.0'
+  gem 'rubocop', '~> 1.31.1'
+  gem 'rubocop-performance', '~> 1.14.2'
+  gem 'rubocop-rails', '~> 2.15.0'
 end
 
 local_gemfile = File.join(File.dirname(__FILE__), "Gemfile.local")
-if File.exists?(local_gemfile)
+if File.exist?(local_gemfile)
   eval_gemfile local_gemfile
 end
 

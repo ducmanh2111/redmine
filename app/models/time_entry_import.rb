@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -56,7 +56,7 @@ class TimeEntryImport < Import
     users = []
     if project
       users = project.members.active.preload(:user)
-      users = users.map(&:user).select{ |u| u.allowed_to?(:log_time, project) }
+      users = users.map(&:user).select{|u| u.allowed_to?(:log_time, project)}
     end
     users << User.current if User.current.logged? && !users.include?(User.current)
     users
@@ -105,16 +105,20 @@ class TimeEntryImport < Import
     end
 
     attributes = {
-      :project_id  => project.id,
       :activity_id => activity_id,
       :author_id   => user.id,
       :user_id     => user_id,
 
-      :issue_id    => row_value(row, 'issue_id'),
       :spent_on    => row_date(row, 'spent_on'),
       :hours       => row_value(row, 'hours'),
       :comments    => row_value(row, 'comments')
     }
+
+    if issue_id = row_value(row, 'issue_id').presence
+      attributes[:issue_id] = issue_id
+    else
+      attributes[:project_id] = project.id
+    end
 
     attributes['custom_field_values'] = object.custom_field_values.inject({}) do |h, v|
       value =

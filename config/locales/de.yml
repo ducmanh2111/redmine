@@ -324,7 +324,6 @@ de:
   field_host: Host
   field_hours: Stunden
   field_identifier: Kennung
-  field_identity_url: OpenID-URL
   field_inherit_members: Benutzer erben
   field_is_closed: Ticket geschlossen
   field_is_default: Standardeinstellung
@@ -360,7 +359,7 @@ de:
   field_path_to_repository: Pfad zum Repository
   field_port: Port
   field_possible_values: Mögliche Werte
-  field_principal: Auftraggeber
+  field_principal: Benutzer oder Gruppe
   field_priority: Priorität
   field_private_notes: Privater Kommentar
   field_project: Projekt
@@ -514,6 +513,10 @@ de:
   label_day_plural: Tage
   label_default: Standard
   label_default_columns: Standard-Spalten
+  label_default_queries:
+    for_all_projects: Für alle Projekte
+    for_current_project: Für das aktuelle Projekt
+    for_all_users: Für alle Benutzer
   label_deleted: gelöscht
   label_descending: Absteigend
   label_details: Details
@@ -627,7 +630,6 @@ de:
   label_loading: Lade...
   label_logged_as: Angemeldet als
   label_login: Anmelden
-  label_login_with_open_id_option: oder mit OpenID anmelden
   label_logout: Abmelden
   label_only: nur
   label_max_size: Maximale Größe
@@ -695,9 +697,9 @@ de:
   label_project_new: Neues Projekt
   label_project_plural: Projekte
   label_public_projects: Öffentliche Projekte
-  label_query: Benutzerdefinierte Abfrage
+  label_query: Abfrage
   label_query_new: Neue Abfrage
-  label_query_plural: Benutzerdefinierte Abfragen
+  label_query_plural: Abfragen
   label_radio_buttons: Radio-Buttons
   label_read: Lesen...
   label_readonly: Nur-Lese-Zugriff
@@ -840,6 +842,7 @@ de:
     other: "%{count} Projekte"
   label_year: Jahr
   label_yesterday: gestern
+  label_default_query: Standardabfrage
 
   mail_body_account_activation_request: "Ein neuer Benutzer (%{value}) hat sich registriert. Sein Konto wartet auf Ihre Genehmigung:"
   mail_body_account_information: Ihre Konto-Informationen
@@ -986,7 +989,6 @@ de:
   setting_attachment_max_size: Maximale Dateigröße
   setting_autofetch_changesets: Changesets automatisch abrufen
   setting_autologin: Automatische Anmeldung läuft ab nach
-  setting_bcc_recipients: E-Mails als Blindkopie (BCC) senden
   setting_cache_formatted_text: Formatierten Text im Cache speichern
   setting_commit_cross_project_ref: Erlauben, Tickets aller anderen Projekte zu referenzieren
   setting_commit_fix_keywords: Schlüsselwörter (Status)
@@ -1032,7 +1034,6 @@ de:
   setting_mail_handler_excluded_filenames: Anhänge nach Namen ausschließen
   setting_new_project_user_role_id: Rolle, die einem Nicht-Administrator zugeordnet wird, der ein Projekt erstellt
   setting_non_working_week_days: Arbeitsfreie Tage
-  setting_openid: Erlaube OpenID-Anmeldung und -Registrierung
   setting_password_min_length: Mindestlänge des Passworts
   setting_password_max_age: Erzwinge Passwortwechsel nach
   setting_lost_password: Zurücksetzen des Passworts per E-Mail erlauben
@@ -1064,6 +1065,7 @@ de:
   status_registered: nicht aktivierte
 
   text_account_destroy_confirmation: "Möchten Sie wirklich fortfahren?\nIhr Benutzerkonto wird für immer gelöscht und kann nicht wiederhergestellt werden."
+  text_allowed_queries_to_select: Nur für alle sichtbare Abfragen können ausgewählt werden
   text_are_you_sure: Sind Sie sicher?
   text_assign_time_entries_to_project: Gebuchte Aufwände dem Projekt zuweisen
   text_caracters_maximum: "Max. %{count} Zeichen."
@@ -1101,12 +1103,14 @@ de:
   text_line_separated: Mehrere Werte sind erlaubt (eine Zeile pro Wert).
   text_load_default_configuration: Standard-Konfiguration laden
   text_mercurial_repository_note: Lokales Repository (z. B. /hgrepo, C:\hgrepo)
-  text_min_max_length_info: 0 heißt keine Beschränkung
   text_no_configuration_data: "Rollen, Tracker, Ticket-Status und Workflows wurden noch nicht konfiguriert.\nEs ist sehr zu empfehlen, die Standard-Konfiguration zu laden. Sobald sie geladen ist, können Sie diese abändern."
   text_own_membership_delete_confirmation: "Sie sind dabei, einige oder alle Ihre Berechtigungen zu entfernen. Es ist möglich, dass Sie danach das Projekt nicht mehr ansehen oder bearbeiten dürfen.\nSind Sie sicher, dass Sie dies tun möchten?"
   text_plugin_assets_writable: Verzeichnis für Plugin-Assets beschreibbar
   text_project_closed: Dieses Projekt ist geschlossen und kann nicht bearbeitet werden.
   text_project_destroy_confirmation: Sind Sie sicher, dass Sie das Projekt löschen wollen?
+  text_project_close_confirmation: Sind Sie sicher, dass Sie das Projekt '%{value}' schließen wollen?
+  text_project_reopen_confirmation: Sind Sie sicher, dass Sie das Projekt '%{value}' wieder öffnen wollen?
+  text_project_archive_confirmation: Sind Sie sicher, dass Sie das Projekt '%{value}' archivieren wollen?
   text_project_identifier_info: 'Kleinbuchstaben (a-z), Ziffern, Binde- und Unterstriche erlaubt.<br />Einmal gespeichert, kann die Kennung nicht mehr geändert werden.'
   text_reassign_time_entries: 'Gebuchte Aufwände diesem Ticket zuweisen:'
   text_regexp_info: z. B. ^[A-Z0-9]+$
@@ -1179,7 +1183,7 @@ de:
   notice_import_finished: "%{count} Einträge wurden importiert"
   notice_import_finished_with_errors: "%{count} von %{total} Einträgen konnten nicht importiert werden"
   error_invalid_file_encoding: Die Datei ist keine gültige %{encoding}-kodierte Datei
-  error_invalid_csv_file_or_settings: Die Datei ist keine CSV-Datei oder entspricht nicht den unten stehenden Einstellungen
+  error_invalid_csv_file_or_settings: Die Datei ist keine CSV-Datei oder entspricht nicht den unten stehenden Einstellungen (%{value})
   error_can_not_read_import_file: Beim Einlesen der Datei ist ein Fehler aufgetreten
   permission_import_issues: Tickets importieren
   label_import_issues: Tickets importieren
@@ -1307,23 +1311,24 @@ de:
   label_import_time_entries: Zeitbuchungen importieren
   field_toolbar_language_options: Sprachen für Code-Hervorhebung, Editor-Symbolleiste
   label_assign_to_me: Mir zuweisen
-  notice_issue_not_closable_by_open_tasks: This issue cannot be closed because it has
-    at least one open subtask.
-  notice_issue_not_closable_by_blocking_issue: This issue cannot be closed because it
-    is blocked by at least one open issue.
-  notice_issue_not_reopenable_by_closed_parent_issue: This issue cannot be reopened
-    because its parent issue is closed.
-  error_bulk_download_size_too_big: These attachments cannot be bulk downloaded because
-    the total file size exceeds the maximum allowed size (%{max_size})
-  setting_bulk_download_max_size: Maximum total size for bulk download
-  label_download_all_attachments: Download all files
-  error_attachments_too_many: This file cannot be uploaded because it exceeds the maximum
-    number of files that can be attached simultaneously (%{max_number_of_files})
-  setting_email_domains_allowed: Allowed email domains
-  setting_email_domains_denied: Disallowed email domains
-  field_passwd_changed_on: Password last changed
-  label_import_users: Import users
-  label_days_to_html: "%{days} days up to %{date}"
+  notice_issue_not_closable_by_open_tasks: Dieses Ticket kann nicht geschlossen werden da
+    mindest ein untergeordnetes Ticket noch geöffnet ist.
+  notice_issue_not_closable_by_blocking_issue: Dieses Ticket kann nicht geschlossen werden
+    da es noch von mindestens einem geöffneten Ticket blockiert wird.
+  notice_issue_not_reopenable_by_closed_parent_issue: Dieses Ticket kann nicht wiedereröffnet werden
+    da das übergeordnete Ticket bereits geschlossen wurde.
+  error_bulk_download_size_too_big: Das Herunterladen dieser Anhänge in aggregierter Form ist nicht möglich,
+    da die Dateigröße des aggregierten Downloads die erlaubte Maximalgröße (%{max_size}) überschreitet.
+  setting_bulk_download_max_size: Maximalgröße für den aggregierten Download von Anhängen
+  label_download_all_attachments: Alle Dateien heruterladen
+  error_attachments_too_many: Diese Datei kann nicht hochgeladen werden, da die maximale Anzahl (%{max_number_of_files}) an Dateien,
+    die gleichzeitig angehängt werden können, überschritten wurde.
+  setting_email_domains_allowed: Erlaubte E-Mail Domains
+  setting_email_domains_denied: Gesperrte E-Mail Domains
+  field_passwd_changed_on: Passwort zuletzt geändert
+  label_import_users: Benutzer importieren
+  label_days_to_html: "%{days} Tage bis %{date}"
+  sudo_mode_new_info_html: <strong>Warum das ganze?</strong> Zu Ihrem Schutz bitten wir Sie Ihr Kennwort zu bestätigen, bevor Sie sicherheitsrelevante Einstellungen ändern.
   setting_twofa: Zwei-Faktor-Authentifizierung
   twofa__totp__name: Authentifizierungs-App
   twofa__totp__text_pairing_info_html: 'Bitte scannen Sie diesen QR-Code oder verwenden Sie den Klartext-Schlüssel in einer TOTP-kompatiblen Authentifizierungs-App (z.B. <a href="https://support.google.com/accounts/answer/1066447?hl=de">Google Authenticator</a>, <a href="https://authy.com/download/">Authy</a>, <a href="https://guide.duo.com/third-party-accounts">Duo Mobile</a>). Anschließend geben Sie bitte den in der App generierten Code unten ein.'
@@ -1358,13 +1363,72 @@ de:
   twofa_text_backup_codes_created_at: Backup-Codes generiert am %{datetime}.
   twofa_backup_codes_already_shown: Aus Sicherheitsgründen können Backup-Codes nicht erneut angezeigt werden. Bitte <a data-method="post" href="%{bc_path}">generieren Sie neue Codes</a> falls nötig.
   label_optional: optional
-  error_can_not_execute_macro_html: Error executing the <strong>%{name}</strong> macro
+  error_can_not_execute_macro_html: Fehler bei der Ausführung des Makros <strong>%{name}</strong>
     (%{error})
-  error_macro_does_not_accept_block: This macro does not accept a block of text
-  error_childpages_macro_no_argument: With no argument, this macro can be called from
-    wiki pages only
-  error_circular_inclusion: Circular inclusion detected
-  error_page_not_found: Page not found
-  error_filename_required: Filename required
-  error_invalid_size_parameter: Invalid size parameter
-  error_attachment_not_found: Attachment %{name} not found
+  error_macro_does_not_accept_block: Dieses Makro akzeptiert keinen Textblock
+  error_childpages_macro_no_argument: Ohne Angabe eines Arguments kann dieses Makro nur von Wikiseiten aus augerufen werden
+  error_circular_inclusion: Zirkuläre Einbindung erkannt
+  error_page_not_found: Seite nicht gefunden
+  error_filename_required: Dateiname benötigt
+  error_invalid_size_parameter: Ungültige Größenangabe
+  error_attachment_not_found: Anhang %{name} nicht gefunden
+  field_twofa_scheme: Zwei-Faktor-Authentifizierungsschema
+
+  text_user_destroy_confirmation: "Wollen Sie diesen Benutzer inklusive aller Referenzen darauf wirklich löschen? Dies kann nicht rückgängig gemacht werden. Oftmals ist es besser, einen Benutzer lediglich zu sperren. Geben Sie bitte zur Bestätigung den Login des Benutzers (%{login}) ein."
+  text_project_destroy_enter_identifier: "Zur Bestätigung bitte die Projektkennung (%{identifier}) eingeben."
+  button_add_subtask: Untergeordnetes Ticket hinzufügen
+  notice_invalid_watcher: 'Ungültiger Beobachter: Benutzer wird keine Benachrichtigungen erhalten,
+    da er über keine Leseberechtigung für dieses Objekt verfügt.'
+  button_fetch_changesets: Changesets abrufen
+  permission_view_message_watchers: Beobachterliste einsehen
+  permission_add_message_watchers: Beobachter hinzufügen
+  permission_delete_message_watchers: Beobachter löschen
+  label_message_watchers: Beobachter
+  button_copy_link: Link kopieren
+  error_invalid_authenticity_token: Ungültiges Authentizitätstoken für Formular.
+  error_query_statement_invalid: Während der Ausführung einer Abfrage ist ein Fehler aufgetreten, dieser wurde
+    protokolliert. Bitte melden Sie diesen Fehler an ihren Redmine-Administrator.
+  permission_view_wiki_page_watchers: Beobachterliste einsehen
+  permission_add_wiki_page_watchers: Beobachter hinzufügen
+  permission_delete_wiki_page_watchers: Beobachter löschen
+  label_wiki_page_watchers: Beobachter
+  label_attachment_description: Dateibeschreibung
+  error_no_data_in_file: Diese Datei beinhaltet keine Daten
+  field_twofa_required: Zwei-Faktor-Authentifizierung erforderlich
+  twofa_hint_optional_html: Die Einstellung <strong>%{label}</strong> läßt den Benutzer
+    Zwei-Faktor-Authentifizierung optional verwenden, solange diese nicht durch eine Benutzergruppe erforderlich ist.
+  twofa_text_group_required: Die Einstellung wird nur verwendet, wenn die globale Zwei-Faktor-Authentifizierung 'optional' ist.
+    Aktuell ist Zwei-Faktor-Authentifizierung für alle Benutzer erforderlich.
+  twofa_text_group_disabled: Die Einstellung wird nur verwendet, wenn die globale Zwei-Faktor-Authentifizierung 'optional' ist.
+    Aktuell ist Zwei-Faktor-Authentifizierung deaktiviert.
+  field_default_issue_query: Standard-Ticketabfrage
+  text_all_migrations_have_been_run: Alle Datenbank-Migrationen wurden ausgeführt
+  button_save_object: "%{object_name} speichern"
+  button_edit_object: "%{object_name} bearbeiten"
+  button_delete_object: "%{object_name} löschen"
+  text_setting_config_change: Diese Verhalten kann in der Datei config/configuration.yml konfiguriert werden.
+    Ein Neustart der Anwendung ist nach einer Änderung erforderlich.
+  label_bulk_edit: Auswahl bearbeiten
+  button_create_and_follow: Erstellen und Ticket anzeigen
+  label_subtask: Untergeordnetes Ticket
+  field_default_project_query: Standard-Projektabfrage
+  label_required_administrators: erforderlich für Administratoren
+  twofa_hint_required_administrators_html: Die Einstellung <strong>%{label}</strong> verhält sich
+    wie 'optional', erfordert aber zusätzlich für alle Benutzer mit Administrator-Rechten die Aktivierung
+    der Zwei-Faktor-Authentifizierung beim nächsten Login.
+  label_auto_watch_on: Automatisch beobachten
+  label_auto_watch_on_issue_contributed_to: Tickets, zu denen ich beigetragen habe
+  mail_destroy_project_failed: Project %{value} could not be deleted.
+  mail_destroy_project_successful: Project %{value} was deleted successfully.
+  mail_destroy_project_with_subprojects_successful: Project %{value} and its subprojects
+    were deleted successfully.
+  project_status_scheduled_for_deletion: scheduled for deletion
+  text_projects_bulk_destroy_confirmation: Are you sure you want to delete the selected
+    projects and related data?
+  text_projects_bulk_destroy_head: |
+    You are about to permanently delete the following projects, including possible subprojects and any related data.
+    Please review the information below and confirm that this is indeed what you want to do.
+    This action cannot be undone.
+  text_projects_bulk_destroy_confirm: To confirm, please enter "%{yes}" in the box below.
+  text_subprojects_bulk_destroy: 'including its subproject(s): %{value}'
+  field_current_password: Current password

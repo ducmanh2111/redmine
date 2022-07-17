@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2020  Jean-Philippe Lang
+# Copyright (C) 2006-2022  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,6 +22,8 @@ class MailHandler < ActionMailer::Base
   include Redmine::I18n
 
   class UnauthorizedAction < StandardError; end
+  class NotAllowedInProject < UnauthorizedAction; end
+  class InsufficientPermissions < UnauthorizedAction; end
   class MissingInformation < StandardError; end
 
   attr_reader :email, :user, :handler_options
@@ -182,9 +184,13 @@ class MailHandler < ActionMailer::Base
   # Creates a new issue
   def receive_issue
     project = target_project
+
+    # Never receive emails to projects where adding issues is not possible
+    raise NotAllowedInProject, "not possible to add issues to project [#{project.name}]" unless project.allows_to?(:add_issues)
+
     # check permission
     unless handler_options[:no_permission_check]
-      raise UnauthorizedAction, "not allowed to add issues to project [#{project.name}]" unless user.allowed_to?(:add_issues, project)
+      raise InsufficientPermissions, "not allowed to add issues to project [#{project.name}]" unless user.allowed_to?(:add_issues, project)
     end
 
     issue = Issue.new(:author => user, :project => project)
@@ -223,11 +229,14 @@ class MailHandler < ActionMailer::Base
       return nil
     end
 
+    # Never receive emails to projects where adding issue notes is not possible
+    project = issue.project
+    raise NotAllowedInProject, "not possible to add notes to project [#{project.name}]" unless project.allows_to?(:add_issue_notes)
+
     # check permission
     unless handler_options[:no_permission_check]
-      unless user.allowed_to?(:add_issue_notes, issue.project) ||
-               user.allowed_to?(:edit_issues, issue.project)
-        raise UnauthorizedAction, "not allowed to add notes on issues to project [#{project.name}]"
+      unless issue.notes_addable?
+        raise InsufficientPermissions, "not allowed to add notes on issues to project [#{issue.project.name}]"
       end
     end
 
@@ -275,8 +284,12 @@ class MailHandler < ActionMailer::Base
       return nil
     end
 
+    # Never receive emails to projects where adding messages is not possible
+    project = message.project
+    raise NotAllowedInProject, "not possible to add messages to project [#{project.name}]" unless project.allows_to?(:add_messages)
+
     unless handler_options[:no_permission_check]
-      raise UnauthorizedAction, "not allowed to add messages to project [#{project.name}]" unless user.allowed_to?(:add_messages, message.project)
+      raise InsufficientPermissions, "not allowed to add messages to project [#{message.project.name}]" unless user.allowed_to?(:add_messages, message.project)
     end
 
     if !message.locked?
@@ -297,6 +310,7 @@ class MailHandler < ActionMailer::Base
       email.attachments.each do |attachment|
         next unless accept_attachment?(attachment)
         next unless attachment.body.decoded.size > 0
+
         obj.attachments << Attachment.create(:container => obj,
                           :file => attachment.body.decoded,
                           :filename => attachment.filename,
@@ -386,11 +400,13 @@ class MailHandler < ActionMailer::Base
   def get_project_from_receiver_addresses
     local, domain = handler_options[:project_from_subaddress].to_s.split("@")
     return nil unless local && domain
+
     local = Regexp.escape(local)
 
     [:to, :cc, :bcc].each do |field|
       header = @email[field]
       next if header.blank? || header.field.blank? || !header.field.respond_to?(:addrs)
+
       header.field.addrs.each do |addr|
         if addr.domain.to_s.casecmp(domain)==0 && addr.local.to_s =~ /\A#{local}\+([^+]+)\z/
           if project = Project.find_by_identifier($1)
@@ -416,6 +432,7 @@ class MailHandler < ActionMailer::Base
       end
     end
     raise MissingInformation, 'Unable to determine target project' if target.nil?
+
     target
   end
 
@@ -618,10 +635,24 @@ class MailHandler < ActionMailer::Base
       rescue RegexpError => e
         logger&.error "MailHandler: invalid regexp delimiter found in mail_handler_body_delimiters setting (#{e.message})"
       end
+    else
+      # In a "normal" delimiter, allow a single space from the originally
+      # defined delimiter to match:
+      #   * any space-like character, or
+      #   * line-breaks and optional quoting with arbitrary spacing around it
+      # in the mail in order to allow line breaks of delimiters.
+      delimiters = delimiters.map do |delimiter|
+        delimiter = Regexp.escape(delimiter).encode!(Encoding::UTF_8)
+        delimiter = delimiter.gsub(/(\\ )+/, '\p{Space}*(\p{Space}|[\r\n](\p{Space}|>)*)')
+        Regexp.new(delimiter)
+      end
     end
 
     unless delimiters.empty?
-      regex = Regexp.new("^[> ]*(#{ Regexp.union(delimiters) })[[:blank:]]*[\r\n].*", Regexp::MULTILINE)
+      regex = Regexp.new("^(\\p{Space}|>)*(#{ Regexp.union(delimiters) })\\p{Space}*[\\r\\n].*", Regexp::MULTILINE)
+      if Setting.text_formatting == "common_mark" && Redmine::Configuration['common_mark_enable_hardbreaks'] == false
+        body = Redmine::WikiFormatting::CommonMark::AppendSpacesToLines.call(body)
+      end
       body = body.gsub(regex, '')
     end
     body.strip
