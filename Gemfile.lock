@@ -319,6 +319,7 @@ DEPENDENCIES
   rbpdf (~> 1.21.1)
   redcarpet (~> 3.6.0)
   request_store (~> 1.5.0)
+  rexml (~> 3.2, >= 3.2.4)
   roadie-rails (~> 3.0.0)
   rotp (>= 5.0.0)
   rouge (~> 4.1.0)
