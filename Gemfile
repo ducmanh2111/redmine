@@ -91,7 +91,7 @@ group :development do
   gem 'listen', '~> 3.3'
   gem "yard"
   gem "capistrano"
-  gem "capistrano3-puma"
+  gem "capistrano3-puma", '~> 5.0.0'
   gem "capistrano-rails", require: false
   gem "capistrano-yarn"
   gem "capistrano-bundler", require: false
