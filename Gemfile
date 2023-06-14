@@ -15,6 +15,7 @@ gem 'i18n', '~> 1.13.0'
 gem 'rbpdf', '~> 1.21.1'
 gem 'addressable'
 gem 'rubyzip', '~> 2.3.0'
+gem 'puma'
 
 #  Ruby Standard Gems
 gem 'csv', '~> 3.2.6'
@@ -104,7 +105,7 @@ group :test do
   gem 'simplecov', '~> 0.22.0', :require => false
   gem "ffi", platforms: [:mingw, :x64_mingw, :mswin]
   # For running system tests
-  gem 'puma'
+  # gem 'puma'
   gem 'capybara', '~> 3.38.0'
   gem "selenium-webdriver", "~> 3.142.7"
   gem 'webdrivers', '4.6.1', require: false
