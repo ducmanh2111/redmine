@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -58,7 +58,7 @@ module Redmine
             else
               value = encode_value(args.first)
               if @struct.last.is_a?(Array)
-                if args.size == 1 && !block_given?
+                if args.size == 1 && !block
                   @struct.last << value
                 else
                   @struct.last << (args.last || {}).merge(:value => value)
@@ -68,7 +68,7 @@ module Redmine
               end
             end
           end
-          if block_given?
+          if block
             @struct << (args.first.is_a?(Hash) ? args.first : {})
             yield(self)
             ret = @struct.pop

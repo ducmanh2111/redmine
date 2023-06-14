@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -108,11 +108,10 @@ class Setting < ActiveRecord::Base
     v = read_attribute(:value)
     # Unserialize serialized settings
     if available_settings[name]['serialized'] && v.is_a?(String)
-      # YAML.load works as YAML.safe_load if Psych >= 4.0 is installed
-      v = YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(v) : YAML.load(v)
+      v = YAML.safe_load(v, permitted_classes: Rails.configuration.active_record.yaml_column_permitted_classes)
       v = force_utf8_strings(v)
     end
-    v = v.to_sym if available_settings[name]['format'] == 'symbol' && !v.blank?
+    v = v.to_sym if available_settings[name]['format'] == 'symbol' && v.present?
     v
   end
 
@@ -218,7 +217,7 @@ class Setting < ActiveRecord::Base
   # # => [{'keywords => 'fixes', 'status_id' => "3"}, {'keywords => 'closes', 'status_id' => "5", 'done_ratio' => "100"}]
   def self.commit_update_keywords_from_params(params)
     s = []
-    if params.is_a?(Hash) && params.key?(:keywords) && params.values.all? {|v| v.is_a? Array}
+    if params.is_a?(Hash) && params.key?(:keywords) && params.values.all?(Array)
       attributes = params.except(:keywords).keys
       params[:keywords].each_with_index do |keywords, i|
         next if keywords.blank?
@@ -321,7 +320,7 @@ class Setting < ActiveRecord::Base
   end
 
   def self.load_available_settings
-    YAML::load(File.open("#{Rails.root}/config/settings.yml")).each do |name, options|
+    YAML.load_file(Rails.root.join('config/settings.yml')).each do |name, options|
       define_setting name, options
     end
   end

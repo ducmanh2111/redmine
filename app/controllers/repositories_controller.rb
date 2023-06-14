@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -202,18 +202,16 @@ class RepositoriesController < ApplicationController
     (show_error_not_found; return) unless @entry
 
     @annotate = @repository.scm.annotate(@path, @rev)
-    if @annotate.nil? || @annotate.empty?
+    if @annotate.blank?
       @annotate = nil
       @error_message = l(:error_scm_annotate)
+    elsif @annotate.lines.sum(&:size) > Setting.file_max_size_displayed.to_i.kilobyte
+      @annotate = nil
+      @error_message = l(:error_scm_annotate_big_text_file)
     else
-      ann_buf_size = 0
-      @annotate.lines.each do |buf|
-        ann_buf_size += buf.size
-      end
-      if ann_buf_size > Setting.file_max_size_displayed.to_i.kilobyte
-        @annotate = nil
-        @error_message = l(:error_scm_annotate_big_text_file)
-      end
+      # the SCM adapter supports "View annotation prior to this change" links
+      # and the entry has previous annotations
+      @has_previous = @annotate.previous_annotations.any?
     end
     @changeset = @repository.find_changeset_by_name(@rev)
   end
@@ -286,7 +284,8 @@ class RepositoriesController < ApplicationController
       @changeset = @repository.find_changeset_by_name(@rev)
       @changeset_to = @rev_to ? @repository.find_changeset_by_name(@rev_to) : nil
       @diff_format_revisions = @repository.diff_format_revisions(@changeset, @changeset_to)
-      render :diff, :formats => :html, :layout => 'base'
+      # TODO: Fix DEPRECATION WARNING: Rendering actions with '.' in the name is deprecated
+      render :diff, :formats => :html, :layout => 'base.html.erb'
     end
   end
 
@@ -337,7 +336,7 @@ class RepositoriesController < ApplicationController
     if params[:repository_id].present?
       @repository = @project.repositories.find_by_identifier_param(params[:repository_id])
     else
-      @repository = @project.repository
+      @repository = @project.repository || @project.repositories.first
     end
     (render_404; return false) unless @repository
     @path = params[:path].is_a?(Array) ? params[:path].join('/') : params[:path].to_s

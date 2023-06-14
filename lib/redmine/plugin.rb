@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -416,7 +416,7 @@ module Redmine
 
     # Returns +true+ if the plugin can be configured.
     def configurable?
-      settings && settings.is_a?(Hash) && !settings[:partial].blank?
+      settings && settings.is_a?(Hash) && settings[:partial].present?
     end
 
     # The directory containing this plugin's migrations (<tt>plugin/db/migrate</tt>)
@@ -484,6 +484,10 @@ module Redmine
 
       def open
         Migrator.new(:up, migrations, schema_migration)
+      end
+
+      def current_version
+        Migrator.current_version
       end
     end
 

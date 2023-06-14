@@ -213,6 +213,7 @@ ru:
         must_contain_lowercase: "должен содержать строчные латинские буквы (a-z)"
         must_contain_digits: "должен содержать цифры (0-9)"
         must_contain_special_chars: "должен содержать специальные символы (!, $, %, ...)"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   support:
     array:
@@ -545,7 +546,6 @@ ru:
   label_jump_to_a_project: Перейти к проекту...
   label_language_based: На основе языка
   label_last_changes: "менее %{count} изменений"
-  label_last_login: Последнее подключение
   label_last_month: прошлый месяц
   label_last_n_days: "последние %{count} дней"
   label_last_week: прошлая неделя
@@ -658,10 +658,6 @@ ru:
   label_show_completed_versions: Показывать завершённые версии
   label_sort: Сортировать
   label_sort_by: "Сортировать по %{value}"
-  label_sort_higher: Вверх
-  label_sort_highest: В начало
-  label_sort_lower: Вниз
-  label_sort_lowest: В конец
   label_spent_time: Трудозатраты
   label_statistics: Статистика
   label_stay_logged_in: Оставаться в системе
@@ -748,7 +744,6 @@ ru:
   notice_account_password_updated: Пароль успешно обновлён.
   notice_account_pending: "Ваша учётная запись создана и ожидает подтверждения администратора."
   notice_account_register_done: Учётная запись успешно создана. Для активации Вашей учётной записи пройдите по ссылке, которая выслана Вам по электронной почте.
-  notice_account_unknown_email: Неизвестный пользователь.
   notice_account_updated: Учётная запись успешно обновлена.
   notice_account_wrong_password: Неверный пароль
   notice_can_t_change_password: Для данной учётной записи используется источник внешней аутентификации. Невозможно изменить пароль.
@@ -1353,7 +1348,7 @@ ru:
   label_trackers_description: Описание трекеров
   label_open_trackers_description: Показать описания трекеров
   label_preferred_body_part_text: Текст
-  label_preferred_body_part_html: HTML (экспериментально)
+  label_preferred_body_part_html: HTML
   field_parent_issue_subject: Тема родительской задачи
   permission_edit_own_issues: Редактировать свои задачи
   text_select_apply_tracker: Выбор этого трекера
@@ -1502,6 +1497,7 @@ ru:
     for_all_projects: Для всех проектов
     for_current_project: Для текущего проекта
     for_all_users: Для всех пользователей
+    for_this_user: For this user
   text_allowed_queries_to_select: Выбор производится из публичных запросов (видимых для всех пользователей)
   text_all_migrations_have_been_run: Миграция база данных полностью выполнена
   button_save_object: Записать %{object_name}
@@ -1510,7 +1506,7 @@ ru:
   text_setting_config_change: Вы можете настроить поведение в файле config/configuration.yml.
     Пожалуйста, перезапустите приложение после редактирования этого файла.
   label_bulk_edit: Массовое редактирование
-  button_create_and_follow: Создать и продолжить
+  button_create_and_follow: Создать и перейти
   label_subtask: Подзадача
   label_default_query: Запрос по умолчанию
   field_default_project_query: Проекты по умолчанию
@@ -1542,3 +1538,20 @@ ru:
   sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
     your password before taking any administrative actions, this ensures your account
     stays protected."
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
+  field_default_time_entry_activity: Default spent time activity
+  field_is_member_of_group: Member of group
+  text_users_bulk_destroy_head: You are about to delete the following users and remove
+    all references to them. This cannot be undone. Often, locking users instead of deleting
+    them is the better solution.
+  text_users_bulk_destroy_confirm: To confirm, please enter "%{yes}" below.
+  permission_select_project_publicity: Set project public or private
+  label_auto_watch_on_issue_created: Issues I created
+  field_any_searchable: Any searchable text
+  label_contains_any_of: contains any of
+  button_apply_issues_filter: Apply issues filter
+  label_view_previous_annotation: View annotation prior to this change
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from

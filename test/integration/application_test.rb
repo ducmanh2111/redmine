@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.expand_path('../../test_helper', __FILE__)
+require_relative '../test_helper'
 
 class ApplicationTest < Redmine::IntegrationTest
   include Redmine::I18n
@@ -95,5 +95,20 @@ class ApplicationTest < Redmine::IntegrationTest
       get '/issues/1.pdf'
       assert_response 302
     end
+  end
+
+  def test_find_optional_project_should_not_error
+    Role.anonymous.remove_permission! :view_gantt
+    with_settings :login_required => '0' do
+      get '/projects/nonexistingproject/issues/gantt'
+      assert_response 302
+    end
+  end
+
+  def test_find_optional_project_should_render_404_for_logged_users
+    log_user('jsmith', 'jsmith')
+
+    get '/projects/nonexistingproject/issues/gantt'
+    assert_response 404
   end
 end

@@ -203,6 +203,7 @@ az:
         must_contain_lowercase: "must contain lowercase letters (a-z)"
         must_contain_digits: "must contain digits (0-9)"
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   support:
     array:
@@ -535,7 +536,6 @@ az:
   label_jump_to_a_project: ... layihəyə keçid
   label_language_based: Dilin əsasında
   label_last_changes: "%{count} az dəyişiklik"
-  label_last_login: Sonuncu qoşulma
   label_last_month: sonuncu ay
   label_last_n_days: "son %{count} gün"
   label_last_week: sonuncu həftə
@@ -648,10 +648,6 @@ az:
   label_show_completed_versions: Bitmiş variantları göstərmək
   label_sort: Çeşidləmək
   label_sort_by: "%{value} üzrə çeşidləmək"
-  label_sort_higher: Yuxarı
-  label_sort_highest: Əvvələ qayıt
-  label_sort_lower: Aşağı
-  label_sort_lowest: Sona qayıt
   label_spent_time: Sərf olunan vaxt
   label_statistics: Statistika
   label_stay_logged_in: Sistemdə qalmaq
@@ -738,7 +734,6 @@ az:
   notice_account_password_updated: Parol müvəffəqiyyətlə yeniləndi.
   notice_account_pending: "Sizin uçot qeydiniz yaradıldı və inzibatçının təsdiqini gözləyir."
   notice_account_register_done: Uçot qeydi müvəffəqiyyətlə yaradıldı. Sizin uçot qeydinizin aktivləşdirilməsi üçün elektron poçtunuza göndərilən linkə keçin.
-  notice_account_unknown_email: Naməlum istifadəçi.
   notice_account_updated: Uçot qeydi müvəffəqiyyətlə yeniləndi.
   notice_account_wrong_password: Parol düzgün deyildir
   notice_can_t_change_password: Bu uçot qeydi üçün xarici autentifikasiya mənbəyi istifadə olunur. Parolu dəyişmək mümkün deyildir.
@@ -1359,7 +1354,7 @@ az:
   label_trackers_description: Trackers description
   label_open_trackers_description: View all trackers description
   label_preferred_body_part_text: Text
-  label_preferred_body_part_html: HTML (experimental)
+  label_preferred_body_part_html: HTML
   field_parent_issue_subject: Parent task subject
   permission_edit_own_issues: Edit own issues
   text_select_apply_tracker: Select tracker
@@ -1520,6 +1515,7 @@ az:
     for_all_projects: For all projects
     for_current_project: For current project
     for_all_users: For all users
+    for_this_user: For this user
   text_allowed_queries_to_select: Public (to any users) queries only selectable
   text_all_migrations_have_been_run: All database migrations have been run
   button_save_object: Save %{object_name}
@@ -1560,3 +1556,20 @@ az:
   sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
     your password before taking any administrative actions, this ensures your account
     stays protected."
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
+  field_default_time_entry_activity: Default spent time activity
+  field_is_member_of_group: Member of group
+  text_users_bulk_destroy_head: You are about to delete the following users and remove
+    all references to them. This cannot be undone. Often, locking users instead of deleting
+    them is the better solution.
+  text_users_bulk_destroy_confirm: To confirm, please enter "%{yes}" below.
+  permission_select_project_publicity: Set project public or private
+  label_auto_watch_on_issue_created: Issues I created
+  field_any_searchable: Any searchable text
+  label_contains_any_of: contains any of
+  button_apply_issues_filter: Apply issues filter
+  label_view_previous_annotation: View annotation prior to this change
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from

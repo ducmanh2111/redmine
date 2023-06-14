@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -120,8 +120,7 @@ class Member < ActiveRecord::Base
   def role_inheritance(role)
     member_roles.
       select {|mr| mr.role_id == role.id && mr.inherited_from.present?}.
-      map {|mr| mr.inherited_from_member_role.try(:member)}.
-      compact.
+      filter_map {|mr| mr.inherited_from_member_role.try(:member)}.
       map {|m| m.project == project ? m.principal : m.project}
   end
 

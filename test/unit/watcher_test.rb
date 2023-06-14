@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.expand_path('../../test_helper', __FILE__)
+require_relative '../test_helper'
 
 class WatcherTest < ActiveSupport::TestCase
   fixtures :projects, :groups_users, :users, :email_addresses, :members, :member_roles, :roles, :enabled_modules,
@@ -91,7 +91,7 @@ class WatcherTest < ActiveSupport::TestCase
   def test_watcher_users_should_not_validate_user
     User.where(:id => 1).update_all("firstname = ''")
     @user.reload
-    assert !@user.valid?
+    assert @user.invalid?
 
     issue = Issue.new(:project => Project.find(1), :tracker_id => 1, :subject => "test", :author => User.find(2))
     issue.watcher_users << @user

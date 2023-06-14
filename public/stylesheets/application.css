@@ -45,6 +45,10 @@ pre, code {font-family: Consolas, Menlo, "Liberation Mono", Courier, monospace;}
 
 #quick-search {float:right;}
 #quick-search #q {width:130px; height:24px; box-sizing:border-box; vertical-align:middle; border:1px solid #ccc; border-radius:3px;}
+#quick-search form {float:left; margin-right:3px;}
+#quick-search form input {margin-top:0; margin-bottom:0;}
+#quick-search form label {vertical-align:middle;}
+#quick-search #project-jump {float:left;}
 
 #main-menu {position: absolute;  bottom: 0px;  left: 10px; margin-right: -500px; width: 100%;}
 #main-menu ul {margin: 0;  padding: 0; width: 100%; white-space: nowrap;}
@@ -133,7 +137,7 @@ pre, code {font-family: Consolas, Menlo, "Liberation Mono", Courier, monospace;}
 
 div.modal { border-radius:5px; background:#fff; z-index:50; padding:4px;}
 div.modal h3.title {display:none;}
-div.modal p.buttons {text-align:right; margin-bottom:0;}
+div.modal p.buttons {margin-bottom:0;}
 div.modal .box p {margin: 0.3em 0;}
 
 .clear:after{ content: "."; display: block; height: 0; clear: both; visibility: hidden; }
@@ -550,7 +554,7 @@ div.issue span.private, div.journal span.private {font-size: 60%;}
 div.issue .next-prev-links {color:#999;}
 div.issue .attributes {margin-top: 2em;}
 div.issue .attributes .attribute {padding-left:180px; clear:left; min-height: 1.8em;}
-div.issue .attributes .attribute .label {width: 170px; margin-left:-180px; font-weight:bold; float:left;  overflow:hidden; text-overflow: ellipsis;}
+div.issue .attributes .attribute .label {width: 170px; margin-left:-180px; font-weight:bold; float:left;  overflow: clip visible; text-overflow: ellipsis;}
 div.issue .attribute .value {overflow:auto; text-overflow: ellipsis;}
 div.issue .attribute.string_cf .value .wiki p {margin-top: 0; margin-bottom: 0;}
 div.issue .attribute.text_cf .value .wiki p:first-of-type {margin-top: 0;}
@@ -567,9 +571,12 @@ body.controller-issues h2.inline-flex {padding-right: 0}
   overflow: hidden;
 }
 #issue_tree .issue > td.subject, #relations .issue > td.subject {
-  width: 100%; /* let subject have one full width column */
+  width: 50%;
   word-break: break-word; /* break word if subject is too long */
   padding-right: 25px; /* this is the spaces that .buttons uses next to subject */
+}
+#issue_tree .issue > td.assigned_to, #relations .issue > td.assigned_to {
+  white-space: nowrap;
 }
 #trackers_description {display:none;}
 #trackers_description dt {font-weight: bold; text-decoration: underline;}
@@ -586,7 +593,7 @@ fieldset#filters table td { padding: 0; vertical-align: middle; }
 fieldset#filters tr.filter { height: 2.1em; }
 fieldset#filters td.field { width:230px; }
 fieldset#filters td.operator { width:130px; }
-fieldset#filters td.operator select {max-width:120px;}
+fieldset#filters td.operator select {max-width:140px;}
 fieldset#filters td.values { white-space:nowrap; }
 fieldset#filters td.values select {min-width:130px;}
 
@@ -610,6 +617,9 @@ div.journal ul.details a, ul.revision-info a {color:#70A7CD;}
 div.journal ul.details a:hover, ul.revision-info a:hover {color:#D14848;}
 body.avatars-on div.journal {padding-left:32px;}
 div.journal h4 img.gravatar {margin-left:-32px;}
+div.journal span.update-info {color: #666; font-size: 0.9em;}
+
+#update {margin-bottom: 1.4em;}
 
 #history .tab-content {
   padding: 0 6px;
@@ -689,11 +699,11 @@ input#issue_subject, input#document_title { width: 99%; }
 select#issue_done_ratio { width: 95px; }
 
 ul.projects {margin:0; padding-left:1em;}
-ul.projects ul {padding-left:1.6em;}
+ul.projects ul.projects {padding-left:1.6em;}
 ul.projects.root {margin:0; padding:0;}
 ul.projects li.root, ul.projects li.child {list-style-type:none;}
 ul.projects li.root div.archived, ul.projects li.child div.archived {color: #aaa;}
-ul.projects div.description li {list-style-type:initial;}
+ul.projects div.description ul li {list-style-type:initial;}
 
 #projects-index {
   column-count: auto;
@@ -981,12 +991,6 @@ select.bool_cf {width:auto !important;}
 
 #tab-content-modules fieldset p {margin:3px 0 4px 0;}
 
-#tab-content-users .splitcontentleft {width: 64%;}
-#tab-content-users .splitcontentright {width: 34%;}
-#tab-content-users fieldset {padding:1em; margin-bottom: 1em;}
-#tab-content-users fieldset label {display: block;}
-#tab-content-users #principals {max-height: 400px; overflow: auto;}
-
 #users_for_watcher {height: 200px; overflow:auto;}
 #users_for_watcher label {display: block;}
 
@@ -1112,6 +1116,7 @@ table.cal .starting a.issue, p.cal.legend .starting {background: url(../images/b
 table.cal .ending a.issue, p.cal.legend .ending {background: url(../images/bullet_end.png) no-repeat -1px -2px; padding-left:16px;}
 table.cal .starting.ending a.issue, p.cal.legend .starting.ending {background: url(../images/bullet_diamond.png) no-repeat -1px -2px; padding-left:16px;}
 p.cal.legend span {display:block;}
+.controller-calendars p.buttons {margin-top: unset;}
 
 /***** Tooltips ******/
 .tooltip{position:relative;z-index:24;}
@@ -1336,9 +1341,11 @@ a.wiki-anchor:hover { color: #aaa !important; text-decoration: none; }
 h1:hover a.wiki-anchor, h2:hover a.wiki-anchor, h3:hover a.wiki-anchor, h4:hover a.wiki-anchor, h5:hover a.wiki-anchor, h6:hover a.wiki-anchor { display: inline; color: #ddd; }
 
 div.wiki img {vertical-align:middle; max-width:100%;}
+div.wiki>.task-list {
+  padding-left: 0px;
+}
 div.wiki .task-list {
   list-style-type: none;
-  padding-left: 0px;
 }
 div.wiki .task-list input.task-list-item-checkbox {
   height: initial;

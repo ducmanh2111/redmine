@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -84,7 +84,7 @@ module Redmine
         #     end
         #   end
         def register(&block)
-          class_eval(&block) if block_given?
+          class_eval(&block) if block
         end
 
         # Defines a new macro with the given name, options and block.
@@ -154,7 +154,7 @@ module Redmine
           unless /\A\w+\z/.match?(name.to_s)
             raise "Invalid macro name: #{name} (only 0-9, A-Z, a-z and _ characters are accepted)"
           end
-          unless block_given?
+          unless block
             raise "Can not create a macro without a block!"
           end
 
@@ -278,8 +278,13 @@ module Redmine
 
         size = size.to_i
         size = 200 unless size > 0
-        if obj && obj.respond_to?(:attachments) &&
-             attachment = Attachment.latest_attach(obj.attachments, filename)
+
+        container = obj.is_a?(Journal) ? obj.journalized : obj
+        attachments = container.attachments if container.respond_to?(:attachments)
+        if (controller_name == 'previews' || action_name == 'preview') && @attachments.present?
+          attachments = (attachments.to_a + @attachments).compact
+        end
+        if attachments.present? && (attachment = Attachment.latest_attach(attachments, filename))
           title = options[:title] || attachment.title
           thumbnail_url =
             url_for(:controller => 'attachments', :action => 'thumbnail',

@@ -152,6 +152,7 @@ de:
         must_contain_lowercase: "muss Kleinbuchstaben (a-z) enthalten"
         must_contain_digits: "muss Zahlen (0-9) enthalten"
         must_contain_special_chars: "muss Sonderzeichen (!, $, %, ...) enthalten"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   actionview_instancetag_blank_option: Bitte auswählen
 
@@ -279,6 +280,7 @@ de:
   field_active: Aktiv
   field_activity: Aktivität
   field_admin: Administrator
+  field_any_searchable: Durchsuchbarer Text
   field_assignable: Tickets können dieser Rolle zugewiesen werden
   field_assigned_to: Zugewiesen an
   field_assigned_to_role: Zuständigkeitsrolle
@@ -330,6 +332,7 @@ de:
   field_is_filter: Als Filter benutzen
   field_is_for_all: Für alle Projekte
   field_is_in_roadmap: In der Roadmap anzeigen
+  field_is_member_of_group: Mitglied in Gruppe
   field_is_private: Privat
   field_is_public: Öffentlich
   field_is_required: Erforderlich
@@ -517,6 +520,7 @@ de:
     for_all_projects: Für alle Projekte
     for_current_project: Für das aktuelle Projekt
     for_all_users: Für alle Benutzer
+    for_this_user: Für diesen Benutzer
   label_deleted: gelöscht
   label_descending: Absteigend
   label_details: Details
@@ -608,7 +612,6 @@ de:
   label_jump_to_a_project: Zu einem Projekt springen...
   label_language_based: Sprachabhängig
   label_last_changes: "%{count} letzte Änderungen"
-  label_last_login: Letzte Anmeldung
   label_last_month: voriger Monat
   label_last_n_days: "die letzten %{count} Tage"
   label_last_n_weeks: letzte %{count} Wochen
@@ -748,10 +751,6 @@ de:
   label_show_completed_versions: Abgeschlossene Versionen anzeigen
   label_sort: Sortierung
   label_sort_by: "Sortiert nach %{value}"
-  label_sort_higher: Eins höher
-  label_sort_highest: An den Anfang
-  label_sort_lower: Eins tiefer
-  label_sort_lowest: Ans Ende
   label_spent_time: Aufgewendete Zeit
   label_statistics: Statistiken
   label_status_transitions: Statusänderungen
@@ -784,7 +783,7 @@ de:
   label_user_activity: "Aktivität von %{value}"
   label_user_anonymous: Anonym
   label_user_mail_no_self_notified: "Ich möchte nicht über Änderungen benachrichtigt werden, die ich selbst durchführe."
-  label_user_mail_notify_about_high_priority_issues_html: "Benachrichtige mich über Aufgaben mit einer Priorität von <em>%{prio}</em> oder höher"
+  label_user_mail_notify_about_high_priority_issues_html: "Benachrichtige mich zusätzlich über Aufgaben mit einer Priorität von <em>%{prio}</em> oder höher"
   label_user_mail_option_all: "Für alle Ereignisse in all meinen Projekten"
   label_user_mail_option_none: Keine Ereignisse
   label_user_mail_option_only_my_events: Nur für Angelegenheiten, die ich beobachte oder an denen ich beteiligt bin
@@ -876,7 +875,6 @@ de:
   notice_account_password_updated: Passwort wurde erfolgreich aktualisiert.
   notice_account_pending: "Ihr Konto wurde erstellt und wartet jetzt auf die Genehmigung des Administrators."
   notice_account_register_done: Konto wurde erfolgreich angelegt. Eine E-Mail mit Hinweisen zur Kontoaktivierung wurde an %{email} gesendet.
-  notice_account_unknown_email: Unbekannter Benutzer.
   notice_account_updated: Konto wurde erfolgreich aktualisiert.
   notice_account_wrong_password: Falsches Passwort.
   notice_api_access_key_reseted: Ihr API-Zugriffsschlüssel wurde zurückgesetzt.
@@ -954,6 +952,7 @@ de:
   permission_rename_wiki_pages: Wiki-Seiten umbenennen
   permission_save_queries: Filter speichern
   permission_select_project_modules: Projektmodule auswählen
+  permission_select_project_publicity: Projekt als privat oder öffentlich markieren
   permission_set_issues_private: Tickets als privat oder öffentlich markieren
   permission_set_notes_private: Kommentar als privat markieren
   permission_set_own_issues_private: Eigene Tickets als privat oder öffentlich markieren
@@ -1272,7 +1271,7 @@ de:
   label_trackers_description: Beschreibung des Trackers
   label_open_trackers_description: Beschreibung aller Tracker anzeigen
   label_preferred_body_part_text: Text
-  label_preferred_body_part_html: HTML (experimentell)
+  label_preferred_body_part_html: HTML
   field_parent_issue_subject: Thema des übergeordneten Tickets
 
   permission_edit_own_issues: Eigene Tickets bearbeiten
@@ -1432,3 +1431,17 @@ de:
   text_projects_bulk_destroy_confirm: To confirm, please enter "%{yes}" in the box below.
   text_subprojects_bulk_destroy: 'including its subproject(s): %{value}'
   field_current_password: Current password
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
+  field_default_time_entry_activity: Default spent time activity
+  text_users_bulk_destroy_head: You are about to delete the following users and remove
+    all references to them. This cannot be undone. Often, locking users instead of deleting
+    them is the better solution.
+  text_users_bulk_destroy_confirm: To confirm, please enter "%{yes}" below.
+  label_auto_watch_on_issue_created: Issues I created
+  label_contains_any_of: contains any of
+  button_apply_issues_filter: Apply issues filter
+  label_view_previous_annotation: View annotation prior to this change
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from

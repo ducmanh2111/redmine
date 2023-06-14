@@ -151,6 +151,7 @@ vi:
         must_contain_lowercase: "must contain lowercase letters (a-z)"
         must_contain_digits: "must contain digits (0-9)"
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   direction: ltr
   date:
@@ -209,7 +210,6 @@ vi:
   notice_account_password_updated: Cập nhật mật mã thành công.
   notice_account_wrong_password: Sai mật mã
   notice_account_register_done: Tài khoản được tạo thành công. Để kích hoạt vui lòng làm theo hướng dẫn trong email gửi đến bạn.
-  notice_account_unknown_email: Không rõ tài khoản.
   notice_can_t_change_password: Tài khoản được chứng thực từ nguồn bên ngoài. Không thể đổi mật mã cho loại chứng thực này.
   notice_account_lost_email_sent: Thông tin để đổi mật mã mới đã gửi đến bạn qua email.
   notice_account_activated: Tài khoản vừa được kích hoạt. Bây giờ bạn có thể đăng nhập.
@@ -431,7 +431,6 @@ vi:
   label_help: Giúp đỡ
   label_reported_issues: Công việc bạn phân công
   label_assigned_to_me_issues: Công việc được phân công
-  label_last_login: Kết nối cuối
   label_registered_on: Ngày tham gia
   label_activity: Hoạt động
   label_new: Mới
@@ -557,10 +556,6 @@ vi:
   label_latest_revision_plural: Bản điều chỉnh cuối cùng
   label_view_revisions: Xem các bản điều chỉnh
   label_max_size: Dung lượng tối đa
-  label_sort_highest: Lên trên cùng
-  label_sort_higher: Dịch lên
-  label_sort_lower: Dịch xuống
-  label_sort_lowest: Xuống dưới cùng
   label_roadmap: Kế hoạch
   label_roadmap_due_in: "Hết hạn trong %{value}"
   label_roadmap_overdue: "Trễ %{value}"
@@ -1319,7 +1314,7 @@ vi:
   label_trackers_description: Trackers description
   label_open_trackers_description: View all trackers description
   label_preferred_body_part_text: Text
-  label_preferred_body_part_html: HTML (experimental)
+  label_preferred_body_part_html: HTML
   field_parent_issue_subject: Parent task subject
   permission_edit_own_issues: Edit own issues
   text_select_apply_tracker: Select tracker
@@ -1480,6 +1475,7 @@ vi:
     for_all_projects: For all projects
     for_current_project: For current project
     for_all_users: For all users
+    for_this_user: For this user
   text_allowed_queries_to_select: Public (to any users) queries only selectable
   text_all_migrations_have_been_run: All database migrations have been run
   button_save_object: Save %{object_name}
@@ -1520,3 +1516,20 @@ vi:
   sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
     your password before taking any administrative actions, this ensures your account
     stays protected."
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
+  field_default_time_entry_activity: Default spent time activity
+  field_is_member_of_group: Member of group
+  text_users_bulk_destroy_head: You are about to delete the following users and remove
+    all references to them. This cannot be undone. Often, locking users instead of deleting
+    them is the better solution.
+  text_users_bulk_destroy_confirm: To confirm, please enter "%{yes}" below.
+  permission_select_project_publicity: Set project public or private
+  label_auto_watch_on_issue_created: Issues I created
+  field_any_searchable: Any searchable text
+  label_contains_any_of: contains any of
+  button_apply_issues_filter: Apply issues filter
+  label_view_previous_annotation: View annotation prior to this change
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from

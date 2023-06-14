@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -60,7 +60,7 @@ module ApplicationHelper
     case principal
     when User
       name = h(principal.name(options[:format]))
-      name = "@" + name if options[:mention]
+      name = "@".html_safe + name if options[:mention]
       css_classes = ''
       if principal.active? || (User.current.admin? && principal.logged?)
         url = user_url(principal, :only_path => only_path)
@@ -252,34 +252,34 @@ module ApplicationHelper
 
   # Helper that formats object for html or text rendering
   def format_object(object, html=true, &block)
-    if block_given?
+    if block
       object = yield object
     end
-    case object.class.name
-    when 'Array'
+    case object
+    when Array
       formatted_objects = object.map {|o| format_object(o, html)}
       html ? safe_join(formatted_objects, ', ') : formatted_objects.join(', ')
-    when 'Time'
+    when Time
       format_time(object)
-    when 'Date'
+    when Date
       format_date(object)
-    when 'Fixnum'
+    when Integer
       object.to_s
-    when 'Float'
+    when Float
       sprintf "%.2f", object
-    when 'User', 'Group'
+    when User, Group
       html ? link_to_principal(object) : object.to_s
-    when 'Project'
+    when Project
       html ? link_to_project(object) : object.to_s
-    when 'Version'
+    when Version
       html ? link_to_version(object) : object.to_s
-    when 'TrueClass'
+    when TrueClass
       l(:general_text_Yes)
-    when 'FalseClass'
+    when FalseClass
       l(:general_text_No)
-    when 'Issue'
+    when Issue
       object.visible? && html ? link_to_issue(object) : "##{object.id}"
-    when 'Attachment'
+    when Attachment
       if html
         content_tag(
           :span,
@@ -294,7 +294,7 @@ module ApplicationHelper
       else
         object.filename
       end
-    when 'CustomValue', 'CustomFieldValue'
+    when CustomValue, CustomFieldValue
       return "" unless object.customized&.visible?
 
       if object.custom_field
@@ -319,10 +319,11 @@ module ApplicationHelper
 
   def thumbnail_tag(attachment)
     thumbnail_size = Setting.thumbnails_size.to_i
+    thumbnail_path = thumbnail_path(attachment, :size => thumbnail_size * 2)
     link_to(
       image_tag(
-        thumbnail_path(attachment),
-        :srcset => "#{thumbnail_path(attachment, :size => thumbnail_size * 2)} 2x",
+        thumbnail_path,
+        :srcset => "#{thumbnail_path} 2x",
         :style => "max-width: #{thumbnail_size}px; max-height: #{thumbnail_size}px;",
         :loading => "lazy"
       ),
@@ -335,7 +336,7 @@ module ApplicationHelper
 
   def toggle_link(name, id, options={})
     onclick = +"$('##{id}').toggle(); "
-    onclick << (options[:focus] ? "$('##{options[:focus]}').focus(); " : "this.blur(); ")
+    onclick << (options[:focus] ? "$('##{options[:focus]}:visible').focus(); " : "this.blur(); ")
     onclick << "$(window).scrollTop($('##{options[:focus]}').position().top); " if options[:scroll]
     onclick << "return false;"
     link_to(name, "#", :onclick => onclick)
@@ -439,7 +440,7 @@ module ApplicationHelper
         classes = (ancestors.empty? ? 'root' : 'child')
         classes += ' archived' if project.archived?
         s << "<li class='#{classes}'><div class='#{classes}'>"
-        s << h(block_given? ? capture(project, &block) : project.name)
+        s << h(block ? capture(project, &block) : project.name)
         s << "</div>\n"
         ancestors << project
       end
@@ -693,6 +694,8 @@ module ApplicationHelper
   end
 
   def time_tag(time)
+    return if time.nil?
+
     text = distance_of_time_in_words(Time.now, time)
     if @project
       link_to(text,
@@ -875,9 +878,9 @@ module ApplicationHelper
     @current_section = 0 if options[:edit_section_links]
 
     parse_sections(text, project, obj, attr, only_path, options)
-    text = parse_non_pre_blocks(text, obj, macros, options) do |text|
+    text = parse_non_pre_blocks(text, obj, macros, options) do |txt|
       [:parse_inline_attachments, :parse_hires_images, :parse_wiki_links, :parse_redmine_links].each do |method_name|
-        send method_name, text, project, obj, attr, only_path, options
+        send method_name, txt, project, obj, attr, only_path, options
       end
     end
     parse_headings(text, project, obj, attr, only_path, options)
@@ -941,7 +944,7 @@ module ApplicationHelper
       attachments += obj.attachments if obj.respond_to?(:attachments)
     end
     if attachments.present?
-      text.gsub!(/src="([^\/"]+\.(bmp|gif|jpg|jpe|jpeg|png))"(\s+alt="([^"]*)")?/i) do |m|
+      text.gsub!(/src="([^\/"]+\.(bmp|gif|jpg|jpe|jpeg|png|webp))"(\s+alt="([^"]*)")?/i) do |m|
         filename, ext, alt, alttext = $1, $2, $3, $4
         # search for the picture in attachments
         if found = Attachment.latest_attach(attachments, CGI.unescape(filename))
@@ -1500,7 +1503,7 @@ module ApplicationHelper
 
   # Render the error messages for the given objects
   def error_messages_for(*objects)
-    objects = objects.map {|o| o.is_a?(String) ? instance_variable_get("@#{o}") : o}.compact
+    objects = objects.filter_map {|o| o.is_a?(String) ? instance_variable_get("@#{o}") : o}
     errors = objects.map {|o| o.errors.full_messages}.flatten
     render_error_messages(errors)
   end
@@ -1727,7 +1730,7 @@ module ApplicationHelper
   # Returns the javascript tags that are included in the html layout head
   def javascript_heads
     tags = javascript_include_tag(
-      'jquery-3.6.0-ui-1.13.1-ujs-6.1.3.1',
+      'jquery-3.6.1-ui-1.13.2-ujs-6.1.7',
       'tribute-5.1.3.min',
       'tablesort-5.2.1.min.js',
       'tablesort-5.2.1.number.min.js',
@@ -1852,10 +1855,10 @@ module ApplicationHelper
   # Returns the markdown formatter: markdown or common_mark
   # ToDo: Remove this when markdown will be removed
   def markdown_formatter
-    if Setting.text_formatting == "common_mark"
-      "common_mark"
-    else
+    if Setting.text_formatting == "markdown"
       "markdown"
+    else
+      "common_mark"
     end
   end
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,9 +17,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.expand_path('../../test_helper', __FILE__)
+require_relative '../test_helper'
 
 class VersionsControllerTest < Redmine::ControllerTest
+  include Redmine::I18n
   fixtures :projects, :enabled_modules,
            :trackers, :projects_trackers,
            :versions, :issue_statuses, :issue_categories, :enumerations,
@@ -220,6 +221,18 @@ class VersionsControllerTest < Redmine::ControllerTest
     assert_select 'a.icon.icon-add', :text => 'New issue'
   end
 
+  def test_show_with_text_format
+    version = Version.find(2)
+    get :show, params: {id: version.id, format: :text}
+    assert_response :success
+    assert_equal 'text/plain', response.media_type
+
+    result = response.body.split("\n\n")
+    assert_equal "# #{version.name}", result[0]
+    assert_equal format_date(version.effective_date), result[1]
+    assert_equal version.description, result[2]
+  end
+
   def test_new
     @request.session[:user_id] = 2
     get :new, :params => {:project_id => '1'}
@@ -336,7 +349,7 @@ class VersionsControllerTest < Redmine::ControllerTest
     end
     assert_redirected_to :controller => 'projects', :action => 'settings',
                          :tab => 'versions', :id => 'ecookbook'
-    assert flash[:error].match(/Unable to delete version/)
+    assert flash[:error].include?('Unable to delete version')
     assert Version.find_by_id(2)
   end
 

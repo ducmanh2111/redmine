@@ -183,6 +183,7 @@ ko:
         must_contain_lowercase: "must contain lowercase letters (a-z)"
         must_contain_digits: "must contain digits (0-9)"
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   actionview_instancetag_blank_option: 선택하세요
 
@@ -203,7 +204,6 @@ ko:
   notice_account_password_updated: 비밀번호가 잘 변경되었습니다.
   notice_account_wrong_password: 잘못된 비밀번호
   notice_account_register_done: 계정이 잘 만들어졌습니다. 계정을 활성화하시려면 받은 메일의 링크를 클릭해주세요.
-  notice_account_unknown_email: 알려지지 않은 사용자.
   notice_can_t_change_password: 이 계정은 외부 인증을 이용합니다. 비밀번호를 변경할 수 없습니다.
   notice_account_lost_email_sent: 새로운 비밀번호를 위한 메일이 발송되었습니다.
   notice_account_activated: 계정이 활성화되었습니다. 이제 로그인 하실수 있습니다.
@@ -490,7 +490,6 @@ ko:
   label_help: 도움말
   label_reported_issues: 보고한 일감
   label_assigned_to_me_issues: 내가 맡은 일감 
-  label_last_login: 마지막 접속
   label_registered_on: 등록시각
   label_activity: 작업내역
   label_user_activity: "%{value}의 작업내역"
@@ -619,10 +618,6 @@ ko:
   label_latest_revision_plural: 최근 개정판
   label_view_revisions: 개정판 보기
   label_max_size: 최대 크기
-  label_sort_highest: 맨 위로
-  label_sort_higher: 위로
-  label_sort_lower: 아래로
-  label_sort_lowest: 맨 아래로
   label_roadmap: 로드맵
   label_roadmap_due_in: "기한  %{value}"
   label_roadmap_overdue: "%{value} 지연"
@@ -1305,7 +1300,7 @@ ko:
   label_trackers_description: Trackers description
   label_open_trackers_description: View all trackers description
   label_preferred_body_part_text: Text
-  label_preferred_body_part_html: HTML (experimental)
+  label_preferred_body_part_html: HTML
   field_parent_issue_subject: Parent task subject
   permission_edit_own_issues: Edit own issues
   text_select_apply_tracker: Select tracker
@@ -1466,6 +1461,7 @@ ko:
     for_all_projects: For all projects
     for_current_project: For current project
     for_all_users: For all users
+    for_this_user: For this user
   text_allowed_queries_to_select: Public (to any users) queries only selectable
   text_all_migrations_have_been_run: All database migrations have been run
   button_save_object: Save %{object_name}
@@ -1506,3 +1502,20 @@ ko:
   sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
     your password before taking any administrative actions, this ensures your account
     stays protected."
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
+  field_default_time_entry_activity: Default spent time activity
+  field_is_member_of_group: Member of group
+  text_users_bulk_destroy_head: You are about to delete the following users and remove
+    all references to them. This cannot be undone. Often, locking users instead of deleting
+    them is the better solution.
+  text_users_bulk_destroy_confirm: To confirm, please enter "%{yes}" below.
+  permission_select_project_publicity: Set project public or private
+  label_auto_watch_on_issue_created: Issues I created
+  field_any_searchable: Any searchable text
+  label_contains_any_of: contains any of
+  button_apply_issues_filter: Apply issues filter
+  label_view_previous_annotation: View annotation prior to this change
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from

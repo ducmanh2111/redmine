@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.expand_path('../../test_helper', __FILE__)
+require_relative '../test_helper'
 
 class ProjectsControllerTest < Redmine::ControllerTest
   fixtures :projects, :versions, :users, :email_addresses, :roles, :members,
@@ -274,6 +274,39 @@ class ProjectsControllerTest < Redmine::ControllerTest
     end
   end
 
+  def test_index_should_ignore_user_default_query_if_it_is_invisible
+    query = ProjectQuery.find(11)
+
+    query.update(visibility: Query::VISIBILITY_PRIVATE, user_id: 2)
+    query.save!
+
+    # If visible default query
+    @request.session[:user_id] = 2
+    User.find(2).pref.update(default_project_query: query.id)
+    get :index
+    assert_select 'h2', text: query.name
+
+    # If invisible default query
+    @request.session[:user_id] = 3
+    User.find(3).pref.update(default_project_query: query.id)
+    get :index
+    assert_select 'h2', text: I18n.t(:label_project_plural)
+  end
+
+  def test_index_should_ignore_global_default_query_if_it_is_not_public
+    query = ProjectQuery.find(11)
+    with_settings default_project_query: query.id do
+      query.update(visibility: Query::VISIBILITY_PRIVATE, user_id: 2)
+      query.save!
+
+      [User.find(1), User.find(2)].each do |user|
+        @request.session[:user_id] = user.id
+        get :index
+        assert_select 'h2', text: I18n.t(:label_project_plural)
+      end
+    end
+  end
+
   def test_autocomplete_js
     get(
       :autocomplete,
@@ -374,6 +407,22 @@ class ProjectsControllerTest < Redmine::ControllerTest
     end
   end
 
+  def test_new_by_non_admin_should_enable_setting_public_if_default_role_is_allowed_to_set_public
+    Role.non_member.add_permission!(:add_project)
+    default_role = Role.generate!(permissions: [:add_project])
+    user = User.generate!
+    @request.session[:user_id] = user.id
+
+    with_settings new_project_user_role_id: default_role.id.to_s do
+      get :new
+      assert_select 'input[name=?][disabled=disabled]', 'project[is_public]'
+
+      default_role.add_permission!(:select_project_publicity)
+      get :new
+      assert_select 'input[name=?]:not([disabled])', 'project[is_public]'
+    end
+  end
+
   def test_new_should_not_display_invalid_search_link
     @request.session[:user_id] = 1
 
@@ -471,7 +520,6 @@ class ProjectsControllerTest < Redmine::ControllerTest
           :name => "blog",
           :description => "weblog",
           :identifier => "blog",
-          :is_public => 1,
           :custom_field_values => {
             '3' => 'Beta'
           },
@@ -485,13 +533,51 @@ class ProjectsControllerTest < Redmine::ControllerTest
     project = Project.find_by_name('blog')
     assert_kind_of Project, project
     assert_equal 'weblog', project.description
-    assert_equal true, project.is_public?
     assert_equal [1, 3], project.trackers.map(&:id).sort
     assert_equal ['issue_tracking', 'news', 'repository'], project.enabled_module_names.sort
 
     # User should be added as a project member
     assert User.find(9).member_of?(project)
     assert_equal 1, project.members.size
+  end
+
+  test "#create by user without select_project_publicity permission should not create a new private project" do
+    Role.non_member.add_permission! :add_project
+    default_role = Project.default_member_role
+    default_role.remove_permission!(:select_project_publicity)
+    @request.session[:user_id] = 9
+
+    post(
+      :create, :params => {
+        :project => {
+          :name => "blog",
+          :identifier => "blog",
+          :enabled_module_names => ['issue_tracking', 'news', 'repository'],
+          :is_public => 0
+        }
+      }
+    )
+
+    project = Project.find_by_name('blog')
+    assert_equal true, project.is_public?
+  end
+
+  test "#create by non-admin user with add_project and select_project_publicity permission should create a new private project" do
+    @request.session[:user_id] = 2
+
+    post(
+      :create, :params => {
+        :project => {
+          :name => "blog",
+          :identifier => "blog",
+          :enabled_module_names => ['issue_tracking', 'news', 'repository'],
+          :is_public => 0
+        }
+      }
+    )
+
+    project = Project.find_by_name('blog')
+    assert_equal false, project.is_public?
   end
 
   test "#create by non-admin user with add_project permission should fail with parent_id" do
@@ -1067,7 +1153,7 @@ class ProjectsControllerTest < Redmine::ControllerTest
     project.update_attribute :updated_on, nil
     assert_equal 'Stable', project.custom_value_for(3).value
 
-    travel_to Time.current do
+    freeze_time do
       post(
         :update,
         :params => {

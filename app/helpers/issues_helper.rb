@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -203,7 +203,7 @@ module IssuesHelper
     s = ''.html_safe
     relations.each do |relation|
       other_issue = relation.other_issue(issue)
-      css = "issue hascontextmenu #{other_issue.css_classes}"
+      css = "issue hascontextmenu #{other_issue.css_classes} #{relation.css_classes_for(other_issue)}"
       buttons =
         if manage_relations
           link_to(
@@ -339,13 +339,15 @@ module IssuesHelper
     end
 
     def size
-      @left.size > @right.size ? @left.size : @right.size
+      [@left.size, @right.size].max
     end
 
     def to_html
+      # rubocop:disable Performance/Sum
       content =
         content_tag('div', @left.reduce(&:+), :class => 'splitcontentleft') +
         content_tag('div', @right.reduce(&:+), :class => 'splitcontentleft')
+      # rubocop:enable Performance/Sum
 
       content_tag('div', content, :class => 'splitcontent')
     end
@@ -443,7 +445,7 @@ module IssuesHelper
 
   def email_issue_attributes(issue, user, html)
     items = []
-    %w(author status priority assigned_to category fixed_version start_date due_date).each do |attribute|
+    %w(author status priority assigned_to category fixed_version start_date due_date parent_issue).each do |attribute|
       if issue.disabled_core_fields.grep(/^#{attribute}(_id)?$/).empty?
         attr_value = (issue.send attribute).to_s
         next if attr_value.blank?
@@ -693,8 +695,8 @@ module IssuesHelper
   def issue_history_tabs
     tabs = []
     if @journals.present?
-      journals_without_notes = @journals.select{|value| value.notes.blank?}
-      journals_with_notes = @journals.reject{|value| value.notes.blank?}
+      has_details = @journals.any? {|value| value.details.present?}
+      has_notes = @journals.any? {|value| value.notes.present?}
       tabs <<
         {
           :name => 'history',
@@ -703,7 +705,7 @@ module IssuesHelper
           :partial => 'issues/tabs/history',
           :locals => {:issue => @issue, :journals => @journals}
         }
-      if journals_with_notes.any?
+      if has_notes
         tabs <<
           {
             :name => 'notes',
@@ -711,7 +713,7 @@ module IssuesHelper
             :onclick => 'showIssueHistory("notes", this.href)'
           }
       end
-      if journals_without_notes.any?
+      if has_details
         tabs <<
           {
             :name => 'properties',
@@ -764,12 +766,18 @@ module IssuesHelper
   end
 
   def projects_for_select(issue)
-    if issue.parent_issue_id.present?
-      issue.allowed_target_projects_for_subtask(User.current)
-    elsif @project && issue.new_record? && !issue.copy?
-      issue.allowed_target_projects(User.current, 'tree')
+    projects =
+      if issue.parent_issue_id.present?
+        issue.allowed_target_projects_for_subtask(User.current)
+      elsif @project && issue.new_record? && !issue.copy?
+        issue.allowed_target_projects(User.current, 'tree')
+      else
+        issue.allowed_target_projects(User.current)
+      end
+    if issue.read_only_attribute_names(User.current).include?('project_id')
+      params['project_id'].present? ? Project.where(identifier: params['project_id']) : projects
     else
-      issue.allowed_target_projects(User.current)
+      projects
     end
   end
 end

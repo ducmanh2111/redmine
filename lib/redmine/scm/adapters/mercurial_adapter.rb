@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -74,11 +74,6 @@ module Redmine
           def template_path_for(version)
             "#{HELPERS_DIR}/#{TEMPLATE_NAME}-1.0.#{TEMPLATE_EXTENSION}"
           end
-        end
-
-        def initialize(url, root_url=nil, login=nil, password=nil, path_encoding=nil)
-          super
-          @path_encoding = path_encoding.blank? ? 'UTF-8' : path_encoding
         end
 
         def path_encoding
@@ -154,7 +149,7 @@ module Redmine
               # do nothing
             end
           end
-          path_prefix = path.blank? ? '' : with_trailling_slash(path)
+          path_prefix = path.blank? ? '' : with_trailing_slash(path)
 
           entries = Entries.new
           as_ary(manifest['dir']).each do |e|
@@ -230,7 +225,7 @@ module Redmine
                                    end
                                  ),
                                :time     => Time.parse(le['date']['__content__']),
-                               :message  => CGI.unescape(le['msg']['__content__']),
+                               :message  => CGI.unescape(le['msg']['__content__'] || ''),
                                :paths    => paths,
                                :parents  => parents_ary)
           end
@@ -363,7 +358,7 @@ module Redmine
         def as_ary(o)
           return [] unless o
 
-          o.is_a?(Array) ? o : Array[o]
+          o.is_a?(Array) ? o : [o]
         end
         private :as_ary
       end

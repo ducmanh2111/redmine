@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -179,7 +179,7 @@ class Principal < ActiveRecord::Base
     principal ||= principals.detect {|a| keyword.casecmp(a.login.to_s) == 0}
     principal ||= principals.detect {|a| keyword.casecmp(a.mail.to_s) == 0}
 
-    if principal.nil? && / /.match?(keyword)
+    if principal.nil? && keyword.include?(' ')
       firstname, lastname = *(keyword.split) # "First Last Throwaway"
       principal ||=
         principals.detect do |a|

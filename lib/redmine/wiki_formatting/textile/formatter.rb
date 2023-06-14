@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -57,7 +57,7 @@ module Redmine
           l = 1
           started = false
           ended = false
-          text.scan(/(((?:.*?)(\A|\r?\n\s*\r?\n))(h(\d+)(#{A}#{C})\.(?::(\S+))?[ \t](.*?)$)|.*)/m).each do |all, content, lf, heading, level|
+          text.scan(/(((?:.*?)(\A|\r?\n\s*\r?\n))(h(\d+)(#{A}#{C})\.(?::(\S+))?[ \t](.*?)$)|.*)/mo).each do |all, content, lf, heading, level|
             if heading.nil?
               if ended
                 after << all
@@ -109,7 +109,7 @@ module Redmine
             text.gsub!(/<redpre#(\d+)>/) do
               content = @pre_list[$1.to_i]
               # This regex must match any data produced by RedCloth3#rip_offtags
-              if content.match(/<code\s+class=(?:"([^"]+)"|'([^']+)')>\s?(.*)/m)
+              if content =~ /<code\s+class=(?:"([^"]+)"|'([^']+)')>\s?(.*)/m
                 language = $1 || $2
                 text = $3
                 # original language for extension development

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -235,8 +235,6 @@ class User < Principal
     end
     user.update_last_login_on! if user && !user.new_record? && user.active?
     user
-  rescue => text
-    raise text
   end
 
   # Returns the user who matches the given autologin +key+ or nil
@@ -750,7 +748,7 @@ class User < Principal
       roles.any? do |role|
         (context.is_public? || role.member?) &&
         role.allowed_to?(action) &&
-        (block_given? ? yield(role, self) : true)
+        (block ? yield(role, self) : true)
       end
     elsif context && context.is_a?(Array)
       if context.empty?
@@ -769,7 +767,7 @@ class User < Principal
       roles = self.roles.to_a | [builtin_role]
       roles.any? do |role|
         role.allowed_to?(action) &&
-        (block_given? ? yield(role, self) : true)
+        (block ? yield(role, self) : true)
       end
     else
       false

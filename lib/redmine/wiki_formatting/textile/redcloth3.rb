@@ -532,10 +532,10 @@ class RedCloth3 < String
             rows = []
             fullrow.gsub!(/([^|\s])\s*\n/, "\\1<br />")
             fullrow.each_line do |row|
-                ratts, row = pba( $1, 'tr' ), $2 if row =~ /^(#{A}#{C}\. )(.*)/m
+                ratts, row = pba( $1, 'tr' ), $2 if row =~ /^(#{A}#{C}\. )(.*)/mo
                 cells = []
                 # the regexp prevents wiki links with a | from being cut as cells
-                row.scan(/\|(_?#{S}#{A}#{C}\. ?)?((\[\[[^|\]]*\|[^|\]]*\]\]|[^|])*?)(?=\|)/) do |modifiers, cell|
+                row.scan(/\|(_?#{S}#{A}#{C}\. ?)?((\[\[[^|\]]*\|[^|\]]*\]\]|[^|])*?)(?=\|)/o) do |modifiers, cell|
                     ctyp = 'd'
                     ctyp = 'h' if modifiers && modifiers =~ /^_/
 
@@ -558,7 +558,7 @@ class RedCloth3 < String
     # Parses Textile lists and generates HTML
     def block_textile_lists( text )
         text.gsub!( LISTS_RE ) do |match|
-            lines = match.split( /\n/ )
+            lines = match.split( "\n" )
             last_line = -1
             depth = []
             lines.each_with_index do |line, line_id|
@@ -603,7 +603,7 @@ class RedCloth3 < String
 
     def block_textile_quotes( text )
       text.gsub!( QUOTES_RE ) do |match|
-        lines = match.split( /\n/ )
+        lines = match.split( "\n" )
         quotes = +''
         indent = 0
         lines.each do |line|
@@ -691,7 +691,7 @@ class RedCloth3 < String
 
     def textile_bq( tag, atts, cite, content )
         cite, cite_title = check_refs( cite )
-        cite = " cite=\"#{cite}\"" if cite
+        cite = " cite=\"#{htmlesc cite.dup}\"" if cite
         atts = shelve( atts ) if atts
         "\t<blockquote#{cite}>\n\t\t<p#{atts}>#{content}</p>\n\t</blockquote>"
     end
@@ -791,7 +791,7 @@ class RedCloth3 < String
                 when :limit
                     sta,oqs,qtag,content,oqa = $~[1..6]
                     atts = nil
-                    if content =~ /^(#{C})(.+)$/
+                    if content =~ /^(#{C})(.+)$/o
                       atts, content = $~[1..2]
                     end
                 else
@@ -1100,9 +1100,9 @@ class RedCloth3 < String
                         ###   and it breaks following lines
                         htmlesc( aftertag, :NoQuotes ) if aftertag && escape_aftertag && !first.match(/<code\s+class="(\w+)">/)
                         line = +"<redpre##{@pre_list.length}>"
-                        first.match(/<#{OFFTAGS}([^>]*)>/)
+                        first =~ /<#{OFFTAGS}([^>]*)>/o
                         tag = $1
-                        $2.to_s.match(/(class\=("[^"]+"|'[^']+'))/i)
+                        $2.to_s =~ /(class\=("[^"]+"|'[^']+'))/i
                         tag << " #{$1}" if $1 && tag == 'code'
                         @pre_list << +"<#{tag}>#{aftertag}"
                     end
@@ -1208,13 +1208,15 @@ class RedCloth3 < String
         end
     end
 
-    ALLOWED_TAGS = %w(redpre pre code kbd notextile)
+    ALLOWED_TAGS = %w(pre code kbd notextile)
     def escape_html_tags(text)
-        text.gsub!(%r{<(\/?([!\w]+)[^<>\n]*)(>?)}) do |m|
-            if ALLOWED_TAGS.include?($2) && $3.present?
-                "<#{$1}#{$3}"
+        text.gsub!(%r{<(\/?([!\w][^ >\t\f\r\n]*)[^<>\n]*)(>?)}) do |m|
+            all, tag, close = $1, $2, $3
+
+            if close.present? && (ALLOWED_TAGS.include?(tag) || (tag =~ /\Aredpre#\d+\z/))
+                "<#{all}#{close}"
             else
-                "&lt;#{$1}#{'&gt;' unless $3.blank?}"
+                "&lt;#{all}#{'&gt;' unless close.blank?}"
             end
         end
     end

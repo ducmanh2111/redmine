@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,8 +22,8 @@ require 'csv'
 module Redmine
   module Export
     module CSV
-      def self.generate(*args, &block)
-        Base.generate(*args, &block)
+      def self.generate(...)
+        Base.generate(...)
       end
 
       class Base < ::CSV

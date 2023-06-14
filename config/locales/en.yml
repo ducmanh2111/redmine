@@ -136,6 +136,7 @@ en:
         must_contain_lowercase: "must contain lowercase letters (a-z)"
         must_contain_digits: "must contain digits (0-9)"
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   actionview_instancetag_blank_option: Please select
 
@@ -156,7 +157,6 @@ en:
   notice_account_password_updated: Password was successfully updated.
   notice_account_wrong_password: Wrong password
   notice_account_register_done: Account was successfully created. An email containing the instructions to activate your account was sent to %{email}.
-  notice_account_unknown_email: Unknown user.
   notice_account_not_activated_yet: You haven't activated your account yet. If you want to receive a new activation email, please <a href="%{url}">click this link</a>.
   notice_account_locked: Your account is locked.
   notice_can_t_change_password: This account uses an external authentication source. Impossible to change the password.
@@ -301,6 +301,7 @@ en:
   field_title: Title
   field_project: Project
   field_issue: Issue
+  field_is_member_of_group: Member of group
   field_status: Status
   field_notes: Notes
   field_is_closed: Issue closed
@@ -321,7 +322,7 @@ en:
   field_login: Login
   field_mail_notification: Email notifications
   field_admin: Administrator
-  field_last_login_on: Last connection
+  field_last_login_on: Last sign in
   field_passwd_changed_on: Password last changed
   field_language: Language
   field_effective_date: Due date
@@ -415,6 +416,8 @@ en:
   field_twofa_required: Require two factor authentication
   field_default_issue_query: Default issue query
   field_default_project_query: Default project query
+  field_default_time_entry_activity: Default spent time activity
+  field_any_searchable: Any searchable text
 
   setting_app_title: Application title
   setting_welcome_text: Welcome text
@@ -519,6 +522,7 @@ en:
   permission_edit_project: Edit project
   permission_close_project: Close / reopen the project
   permission_delete_project: Delete the project
+  permission_select_project_publicity: Set project public or private
   permission_select_project_modules: Select project modules
   permission_manage_members: Manage members
   permission_manage_project_activities: Manage project activities
@@ -671,7 +675,6 @@ en:
   label_assigned_issues: Assigned issues
   label_assigned_to_me_issues: Issues assigned to me
   label_updated_issues: Updated issues
-  label_last_login: Last connection
   label_registered_on: Registered on
   label_activity: Activity
   label_user_activity: "%{value}'s activity"
@@ -806,6 +809,7 @@ en:
   label_more_than_ago: more than days ago
   label_ago: days ago
   label_contains: contains
+  label_contains_any_of: contains any of
   label_not_contains: doesn't contain
   label_starts_with: starts with
   label_ends_with: ends with
@@ -814,6 +818,9 @@ en:
   label_no_issues_in_project: no issues in project
   label_any_open_issues: any open issues
   label_no_open_issues: no open issues
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from
   label_day_plural: days
   label_repository: Repository
   label_repository_new: New repository
@@ -834,12 +841,9 @@ en:
   label_latest_revision_plural: Latest revisions
   label_view_revisions: View revisions
   label_view_all_revisions: View all revisions
+  label_view_previous_annotation: View annotation prior to this change
   label_x_revisions: "%{count} revisions"
   label_max_size: Maximum size
-  label_sort_highest: Move to top
-  label_sort_higher: Move up
-  label_sort_lower: Move down
-  label_sort_lowest: Move to bottom
   label_roadmap: Roadmap
   label_roadmap_due_in: "Due in %{value}"
   label_roadmap_overdue: "%{value} late"
@@ -962,6 +966,7 @@ en:
   label_optional_description: Optional description
   label_add_another_file: Add another file
   label_auto_watch_on: Auto watch
+  label_auto_watch_on_issue_created: Issues I created
   label_auto_watch_on_issue_contributed_to: Issues I contributed to
   label_preferences: Preferences
   label_chronological_order: In chronological order
@@ -1109,13 +1114,14 @@ en:
     for_all_projects: For all projects
     for_current_project: For current project
     for_all_users: For all users
+    for_this_user: For this user
   label_nothing_to_preview: Nothing to preview
   label_inherited_from_parent_project: "Inherited from parent project"
   label_inherited_from_group: "Inherited from group %{name}"
   label_trackers_description: Trackers description
   label_open_trackers_description: View all trackers description
   label_preferred_body_part_text: Text
-  label_preferred_body_part_html: HTML (experimental)
+  label_preferred_body_part_html: HTML
   label_issue_history_properties: Property changes
   label_issue_history_notes: Notes
   label_last_tab_visited: Last visited tab
@@ -1129,6 +1135,8 @@ en:
   label_my_bookmarks: My bookmarks
   label_assign_to_me: Assign to me
   label_default_query: Default query
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
 
   button_login: Login
   button_submit: Submit
@@ -1194,6 +1202,7 @@ en:
   button_edit_object: "Edit %{object_name}"
   button_delete_object: "Delete %{object_name}"
   button_create_and_follow: Create and follow
+  button_apply_issues_filter: Apply issues filter
 
   status_active: active
   status_registered: registered
@@ -1224,6 +1233,8 @@ en:
   text_project_close_confirmation: Are you sure you want to close the '%{value}' project to make it read-only?
   text_project_reopen_confirmation: Are you sure you want to reopen the '%{value}' project?
   text_project_archive_confirmation: Are you sure you want to archive the '%{value}' project?
+  text_users_bulk_destroy_head: 'You are about to delete the following users and remove all references to them. This cannot be undone. Often, locking users instead of deleting them is the better solution.'
+  text_users_bulk_destroy_confirm: 'To confirm, please enter "%{yes}" below.'
   text_workflow_edit: Select a role and a tracker to edit the workflow
   text_are_you_sure: Are you sure?
   text_journal_changed: "%{label} changed from %{old} to %{new}"

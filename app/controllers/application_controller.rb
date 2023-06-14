@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Redmine - project management software
-# Copyright (C) 2006-2022  Jean-Philippe Lang
+# Copyright (C) 2006-2023  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -251,7 +251,7 @@ class ApplicationController < ActionController::Base
     end
     if lang.nil? && !Setting.force_default_language_for_anonymous? && request.env['HTTP_ACCEPT_LANGUAGE']
       accept_lang = parse_qvalues(request.env['HTTP_ACCEPT_LANGUAGE']).first
-      if !accept_lang.blank?
+      if accept_lang.present?
         accept_lang = accept_lang.downcase
         lang = find_language(accept_lang) || find_language(accept_lang.split('-').first)
       end
@@ -354,9 +354,12 @@ class ApplicationController < ActionController::Base
   # and authorize the user for the requested action
   def find_optional_project
     if params[:project_id].present?
-      find_project(params[:project_id])
+      @project = Project.find(params[:project_id])
     end
     authorize_global
+  rescue ActiveRecord::RecordNotFound
+    User.current.logged? ? render_404 : require_login
+    false
   end
 
   # Finds and sets @project based on @object.project
@@ -405,7 +408,7 @@ class ApplicationController < ActionController::Base
     raise ActiveRecord::RecordNotFound if @issues.empty?
     raise Unauthorized unless @issues.all?(&:visible?)
 
-    @projects = @issues.collect(&:project).compact.uniq
+    @projects = @issues.filter_map(&:project).uniq
     @project = @projects.first if @projects.size == 1
   rescue ActiveRecord::RecordNotFound
     render_404
@@ -552,7 +555,7 @@ class ApplicationController < ActionController::Base
     else
       if args.any?
         redirect_to *args
-      elsif block_given?
+      elsif block
         yield
       else
         raise "#redirect_to_referer_or takes arguments or a block"

@@ -134,6 +134,7 @@ th:
         must_contain_lowercase: "must contain lowercase letters (a-z)"
         must_contain_digits: "must contain digits (0-9)"
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
+        domain_not_allowed: "contains a domain not allowed (%{domain})"
 
   actionview_instancetag_blank_option: กรุณาเลือก
 
@@ -154,7 +155,6 @@ th:
   notice_account_password_updated: รหัสได้ถูกปรับปรุงแล้ว.
   notice_account_wrong_password: รหัสผ่านไม่ถูกต้อง
   notice_account_register_done: บัญชีถูกสร้างแล้ว. กรุณาเช็คเมล์ แล้วคลิ๊กที่ลิงค์ในอีเมล์เพื่อเปิดใช้บัญชี
-  notice_account_unknown_email: ไม่มีผู้ใช้ที่ใช้อีเมล์นี้.
   notice_can_t_change_password: บัญชีนี้ใช้การยืนยันตัวตนจากแหล่งภายนอก. ไม่สามารถปลี่ยนรหัสผ่านได้.
   notice_account_lost_email_sent: เราได้ส่งอีเมล์พร้อมวิธีการสร้างรหัีสผ่านใหม่ให้คุณแล้ว กรุณาเช็คเมล์.
   notice_account_activated: บัญชีของคุณได้เปิดใช้แล้ว. ตอนนี้คุณสามารถเข้าสู่ระบบได้แล้ว.
@@ -369,7 +369,6 @@ th:
   label_help: ช่วยเหลือ
   label_reported_issues: ปัญหาที่แจ้งไว้
   label_assigned_to_me_issues: ปัญหาที่มอบหมายให้ฉัน
-  label_last_login: ติดต่อครั้งสุดท้าย
   label_registered_on: ลงทะเบียนเมื่อ
   label_activity: กิจกรรม
   label_activity_plural: กิจกรรม
@@ -493,10 +492,6 @@ th:
   label_latest_revision_plural: รุ่นการแก้ไขล่าสุด
   label_view_revisions: ดูการแก้ไข
   label_max_size: ขนาดใหญ่สุด
-  label_sort_highest: ย้ายไปบนสุด
-  label_sort_higher: ย้ายขึ้น
-  label_sort_lower: ย้ายลง
-  label_sort_lowest: ย้ายไปล่างสุด
   label_roadmap: แผนงาน
   label_roadmap_due_in: "ถึงกำหนดใน %{value}"
   label_roadmap_overdue: "%{value} ช้ากว่ากำหนด"
@@ -1263,7 +1258,7 @@ th:
   label_trackers_description: Trackers description
   label_open_trackers_description: View all trackers description
   label_preferred_body_part_text: Text
-  label_preferred_body_part_html: HTML (experimental)
+  label_preferred_body_part_html: HTML
   field_parent_issue_subject: Parent task subject
   permission_edit_own_issues: Edit own issues
   text_select_apply_tracker: Select tracker
@@ -1424,6 +1419,7 @@ th:
     for_all_projects: For all projects
     for_current_project: For current project
     for_all_users: For all users
+    for_this_user: For this user
   text_allowed_queries_to_select: Public (to any users) queries only selectable
   text_all_migrations_have_been_run: All database migrations have been run
   button_save_object: Save %{object_name}
@@ -1464,3 +1460,20 @@ th:
   sudo_mode_new_info_html: "<strong>What's happening?</strong> You need to reconfirm
     your password before taking any administrative actions, this ensures your account
     stays protected."
+  label_edited: Edited
+  label_time_by_author: "%{time} by %{author}"
+  field_default_time_entry_activity: Default spent time activity
+  field_is_member_of_group: Member of group
+  text_users_bulk_destroy_head: You are about to delete the following users and remove
+    all references to them. This cannot be undone. Often, locking users instead of deleting
+    them is the better solution.
+  text_users_bulk_destroy_confirm: To confirm, please enter "%{yes}" below.
+  permission_select_project_publicity: Set project public or private
+  label_auto_watch_on_issue_created: Issues I created
+  field_any_searchable: Any searchable text
+  label_contains_any_of: contains any of
+  button_apply_issues_filter: Apply issues filter
+  label_view_previous_annotation: View annotation prior to this change
+  label_has_been: has been
+  label_has_never_been: has never been
+  label_changed_from: changed from
