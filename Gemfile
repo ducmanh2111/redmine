@@ -90,6 +90,12 @@ end
 group :development do
   gem 'listen', '~> 3.3'
   gem "yard"
+  gem "capistrano"
+  gem "capistrano3-puma"
+  gem "capistrano-rails", require: false
+  gem "capistrano-yarn"
+  gem "capistrano-bundler", require: false
+  gem "capistrano-rvm"
 end
 
 group :test do
