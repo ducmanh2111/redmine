@@ -27,7 +27,7 @@ elsif rails_env == 'production'
   directory "/var/www/redmine"
   stdout_redirect '#{shared_dir}/log/puma.log', '#{shared_dir}/log/puma.log', true
 
-  workers 2
+  workers 0
   threads 2,16
 
   daemonize true
