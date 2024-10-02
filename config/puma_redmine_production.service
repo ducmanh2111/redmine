@@ -1,0 +1,25 @@
+[Unit]
+Description=Puma HTTP Server (production)
+After=network.target
+
+[Service]
+Type=simple
+Environment=RAILS_ENV=production
+WorkingDirectory=/var/www/redmine/current
+User=deploy
+Group=deploy
+
+ExecStart=/bin/bash -lc "/home/deploy/.rbenv/bin/rbenv exec bundle exec puma -C /var/www/redmine/shared/puma.rb"
+ExecReload=/bin/bash -lc "bundle exec pumactl -S /var/www/redmine/shared/tmp/pids/puma.state -F /var/www/redmine/shared/puma.rb restart"
+ExecStop=/bin/bash -lc "bundle exec pumactl -S /var/www/redmine/shared/tmp/pids/puma.state -F /var/www/redmine/shared/puma.rb stop"
+
+RestartSec=1
+Restart=on-failure
+
+StandardOutput=syslog
+StandardError=syslog
+
+SyslogIdentifier=puma
+
+[Install]
+WantedBy=default.target
